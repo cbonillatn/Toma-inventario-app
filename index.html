@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BQEF · Inventario Físico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1c2537;
+    --border: #2a3548;
+    --accent: #00e5a0;
+    --accent2: #0096ff;
+    --danger: #ff4757;
+    --warn: #ffa502;
+    --text: #e8edf5;
+    --text2: #7a8ba8;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+    --radius: 10px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── GRID BACKGROUND ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,160,.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,160,.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── LOGIN ── */
+  #login-screen {
+    position: fixed; inset: 0;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    background: var(--bg);
+  }
+
+  .login-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 48px 40px;
+    width: 360px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-card::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 180px; height: 180px;
+    background: radial-gradient(circle, rgba(0,229,160,.15), transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .2em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .login-title {
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 32px;
+    line-height: 1.2;
+  }
+
+  .login-title span { color: var(--accent); }
+
+  label {
+    display: block;
+    font-size: 11px;
+    font-family: var(--mono);
+    letter-spacing: .12em;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  input[type=text], input[type=password], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 15px;
+    padding: 11px 14px;
+    outline: none;
+    transition: border-color .2s;
+    margin-bottom: 20px;
+  }
+
+  input:focus, select:focus { border-color: var(--accent); }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    padding: 12px 22px;
+    border-radius: var(--radius);
+    border: none; cursor: pointer;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .05em;
+    transition: all .2s;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+
+  .btn-primary {
+    background: var(--accent);
+    color: #0a0e1a;
+    width: 100%;
+  }
+  .btn-primary:hover { background: #00ffb3; transform: translateY(-1px); }
+
+  .btn-secondary {
+    background: var(--surface2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+  .btn-danger {
+    background: rgba(255,71,87,.15);
+    color: var(--danger);
+    border: 1px solid rgba(255,71,87,.3);
+  }
+  .btn-danger:hover { background: rgba(255,71,87,.25); }
+
+  /* ── APP SHELL ── */
+  #app { display: none; position: relative; z-index: 1; min-height: 100vh; }
+
+  /* ── TOPBAR ── */
+  .topbar {
+    position: sticky; top: 0; z-index: 50;
+    background: rgba(10,14,26,.85);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+
+  .topbar-brand {
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: .15em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .topbar-right { display: flex; align-items: center; gap: 16px; }
+
+  .user-badge {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px;
+    color: var(--text2);
+  }
+
+  .role-chip {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+  }
+
+  .role-admin { background: rgba(0,229,160,.15); color: var(--accent); }
+  .role-editor { background: rgba(0,150,255,.15); color: var(--accent2); }
+  .role-lector { background: rgba(122,139,168,.15); color: var(--text2); }
+
+  /* ── MAIN LAYOUT ── */
+  .main { max-width: 900px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex; gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 6px;
+    margin-bottom: 28px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    padding: 10px;
+    text-transform: uppercase;
+    transition: all .2s;
+  }
+
+  .tab-btn.active {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  .tab-btn:hover:not(.active) { color: var(--text); }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    letter-spacing: .15em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px; height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* ── SCAN FORM ── */
+  .scan-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .scan-input-wrap { position: relative; }
+
+  .scan-input-wrap input {
+    font-family: var(--mono);
+    font-size: 18px;
+    padding: 14px 48px 14px 16px;
+    margin-bottom: 0;
+  }
+
+  .scan-icon {
+    position: absolute;
+    right: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text2);
+    font-size: 20px;
+  }
+
+  .product-preview {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    min-height: 52px;
+    display: flex; align-items: center;
+    transition: all .3s;
+  }
+
+  .product-preview.found { border-color: var(--accent); }
+  .product-preview.not-found { border-color: var(--danger); }
+
+  .product-name {
+    font-weight: 500;
+    font-size: 15px;
+    flex: 1;
+  }
+
+  .product-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  .status-found { background: rgba(0,229,160,.15); color: var(--accent); }
+  .status-notfound { background: rgba(255,71,87,.15); color: var(--danger); }
+
+  /* ── FORM GRID ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group { display: flex; flex-direction: column; }
+  .form-group.full { grid-column: 1 / -1; }
+
+  .form-group label { margin-bottom: 6px; }
+  .form-group input, .form-group select { margin-bottom: 0; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  th {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--text2);
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+
+  td {
+    padding: 11px 12px;
+    border-bottom: 1px solid rgba(42,53,72,.5);
+    vertical-align: middle;
+  }
+
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: rgba(255,255,255,.02); }
+
+  .code-cell {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--accent2);
+  }
+
+  /* ── STATUS BAR ── */
+  .status-bar {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 12px 24px;
+    font-size: 13px;
+    font-family: var(--mono);
+    display: flex; align-items: center; gap: 10px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.4);
+    transition: all .4s cubic-bezier(.34,1.56,.64,1);
+    opacity: 0; pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .status-bar.show { opacity: 1; pointer-events: auto; }
+  .status-bar.success { border-color: var(--accent); color: var(--accent); }
+  .status-bar.error { border-color: var(--danger); color: var(--danger); }
+  .status-bar.loading { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── SPINNER ── */
+  .spinner {
+    width: 14px; height: 14px;
+    border: 2px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: inline-block;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── STATS ROW ── */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+
+  .stat-num {
+    font-family: var(--mono);
+    font-size: 32px;
+    color: var(--accent);
+    display: block;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+
+  .stat-label {
+    font-size: 11px;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .1em;
+    font-family: var(--mono);
+  }
+
+  /* ── CONFIG ── */
+  .config-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .config-item:last-child { border-bottom: none; }
+
+  .config-label { font-weight: 500; font-size: 14px; }
+  .config-desc { font-size: 12px; color: var(--text2); margin-top: 2px; }
+
+  .config-input { width: 280px; margin-bottom: 0; font-size: 13px; }
+
+  /* ── ADMIN USERS ── */
+  .users-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .user-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .user-row input, .user-row select { margin-bottom: 0; }
+
+  /* ── EMPTY STATE ── */
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text2);
+    font-size: 13px;
+    font-family: var(--mono);
+    letter-spacing: .1em;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    .login-card { width: 100%; margin: 16px; padding: 32px 24px; }
+    .user-row { grid-template-columns: 1fr; }
+    .config-input { width: 100%; }
+    .config-item { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+
+  /* ── FADE IN ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .panel.active { animation: fadeUp .3s ease; }
+
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <p class="login-logo">◈ BQEF System</p>
+    <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
+
+    <label for="l-user">Usuario</label>
+    <input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
+
+    <label for="l-pass">Contraseña</label>
+    <input type="password" id="l-pass" placeholder="••••••••">
+
+    <button class="btn btn-primary" onclick="doLogin()">
+      <span>Ingresar</span>
+      <span>→</span>
+    </button>
+
+    <p style="margin-top:20px;font-size:12px;color:var(--text2);text-align:center;font-family:var(--mono)">
+      Demo: admin/admin · editor/editor · lector/lector
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════ APP ══════════════ -->
+<div id="app">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <span class="topbar-brand">◈ BQEF · Inventario</span>
+    <div class="topbar-right">
+      <div class="user-badge">
+        <span id="ui-username"></span>
+        <span class="role-chip" id="ui-role-chip"></span>
+      </div>
+      <button class="btn btn-secondary" style="padding:8px 14px;font-size:11px" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="main">
+
+    <!-- TABS -->
+    <div class="tabs" id="tabs-container">
+      <button class="tab-btn active" data-tab="ingresar" onclick="switchTab(this)">▪ Registrar</button>
+      <button class="tab-btn" data-tab="resumen" onclick="switchTab(this)">▪ Resumen</button>
+      <button class="tab-btn admin-only" data-tab="config" onclick="switchTab(this)" style="display:none">▪ Config.</button>
+    </div>
+
+    <!-- ── TAB: INGRESAR ── -->
+    <div class="panel active" id="tab-ingresar">
+
+      <div class="card">
+        <div class="card-title">Escanear / Ingresar Código</div>
+
+        <div class="scan-row">
+          <div class="scan-input-wrap" style="flex:1">
+            <input type="text" id="codigo-input"
+              placeholder="Escanea o escribe el CÓDIGO NAF"
+              autocomplete="off" autocorrect="off"
+              oninput="onCodigoInput()"
+              onkeydown="if(event.key==='Enter') buscarProducto()">
+            <span class="scan-icon">⌗</span>
+          </div>
+          <button class="btn btn-secondary" onclick="buscarProducto()">Buscar</button>
+        </div>
+
+        <!-- Preview producto -->
+        <div class="product-preview" id="product-preview">
+          <span style="color:var(--text2);font-size:13px;font-family:var(--mono)">
+            Ingresa un código para verificar el producto
+          </span>
+        </div>
+
+        <!-- Datos conteo -->
+        <div class="form-grid" id="form-conteo">
+          <div class="form-group">
+            <label>Conteo (cantidad)</label>
+            <input type="number" id="f-conteo" min="0" placeholder="0" id="lector-disabled">
+          </div>
+          <div class="form-group">
+            <label>Ubicación del producto</label>
+            <input type="text" id="f-ubicacion" placeholder="Ej: A-03-2" id="lector-disabled">
+          </div>
+          <div class="form-group">
+            <label>Responsable</label>
+            <select id="f-responsable" id="lector-disabled">
+              <option value="">— Seleccionar —</option>
+            </select>
+          </div>
+          <div class="form-group" style="align-self:flex-end">
+            <button class="btn btn-primary" id="btn-guardar" onclick="guardarConteo()">
+              Guardar Registro ↗
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mini historial sesión -->
+      <div class="card">
+        <div class="card-title">Registros de esta sesión</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th>Conteo</th>
+                <th>Ubicación</th>
+                <th>Responsable</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="session-log"></tbody>
+          </table>
+          <div class="empty" id="session-empty">Sin registros aún</div>
+        </div>
+      </div>
+
+    </div><!-- /tab-ingresar -->
+
+    <!-- ── TAB: RESUMEN ── -->
+    <div class="panel" id="tab-resumen">
+      <div class="stats-row">
+        <div class="stat-card">
+          <span class="stat-num" id="stat-total">—</span>
+          <span class="stat-label">Total registros</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="stat-hoy">—</span>
+          <span class="stat-label">Contados hoy</span>
+        </div>
+        <div class="stat-card">
+          <span class="stat-num" id="stat-resp">—</span>
+          <span class="stat-label">Responsables</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Inventario registrado</div>
+        <div style="margin-bottom:16px;display:flex;gap:10px">
+          <input type="text" id="filtro-input" placeholder="Filtrar por código o descripción…"
+            style="margin-bottom:0;flex:1" oninput="filtrarTabla()">
+          <button class="btn btn-secondary" onclick="cargarResumen()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Código NAF</th>
+                <th>Descripción</th>
+                <th>Conteo</th>
+                <th>Ubicación</th>
+                <th>Responsable</th>
+              </tr>
+            </thead>
+            <tbody id="resumen-body"></tbody>
+          </table>
+          <div class="empty" id="resumen-empty" style="display:none">Sin datos</div>
+        </div>
+      </div>
+    </div><!-- /tab-resumen -->
+
+    <!-- ── TAB: CONFIG ── -->
+    <div class="panel" id="tab-config">
+
+      <div class="card">
+        <div class="card-title">Configuración general</div>
+
+        <div class="config-item">
+          <div>
+            <div class="config-label">URL del Google Sheet activo</div>
+            <div class="config-desc">Cambia aquí cada mes cuando se renueva el archivo</div>
+          </div>
+          <input type="text" class="config-input" id="cfg-sheet-url"
+            placeholder="https://docs.google.com/spreadsheets/d/…">
+        </div>
+
+        <div class="config-item">
+          <div>
+            <div class="config-label">URL del Apps Script (Web App)</div>
+            <div class="config-desc">URL de deployment del script desplegado como Web App</div>
+          </div>
+          <input type="text" class="config-input" id="cfg-script-url"
+            placeholder="https://script.google.com/macros/s/…/exec">
+        </div>
+
+        <div style="margin-top:20px">
+          <button class="btn btn-primary" onclick="guardarConfig()" style="width:auto">
+            Guardar configuración
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Responsables del mes</div>
+        <div id="users-list" class="users-list"></div>
+        <div class="divider"></div>
+        <button class="btn btn-secondary" onclick="addResponsable()" style="margin-top:4px">
+          + Agregar responsable
+        </button>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" onclick="guardarResponsables()" style="width:auto">
+            Guardar responsables
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Gestión de usuarios</div>
+        <div id="admin-users-list" class="users-list"></div>
+        <div class="divider"></div>
+        <button class="btn btn-secondary" onclick="addUser()">+ Agregar usuario</button>
+        <div style="margin-top:12px">
+          <button class="btn btn-primary" onclick="guardarUsuarios()" style="width:auto">
+            Guardar usuarios
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /tab-config -->
+
+  </div><!-- /main -->
+</div><!-- /app -->
+
+<!-- STATUS BAR -->
+<div class="status-bar" id="status-bar"></div>
+
+<script>
+// ══════════════════════════════════════════════════
+// CONFIGURACIÓN — edita solo estas dos líneas
+// ══════════════════════════════════════════════════
+const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/TU_DEPLOYMENT_ID_AQUI/exec';
+const DEFAULT_SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1cB7KaTUG-CnGM6dxkQCa74rIcmuLqsnyHG4DesaO4tE/';
+
+// ══════════════════════════════════════════════════
+// ESTADO LOCAL
+// ══════════════════════════════════════════════════
+let state = {
+  currentUser: null,
+  productCache: {},    // código → descripción
+  sessionLog: [],
+  resumenData: [],
+};
+
+// ── Storage helpers ──
+function ls(k) { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }
+function lss(k,v) { localStorage.setItem(k, JSON.stringify(v)); }
+
+// ── Config ──
+function getCfg() {
+  return {
+    scriptUrl: ls('cfg_scriptUrl') || DEFAULT_SCRIPT_URL,
+    sheetUrl:  ls('cfg_sheetUrl')  || DEFAULT_SHEET_URL,
+  };
+}
+
+// ── Users (stored locally — in production, store in sheet) ──
+function getUsers() {
+  return ls('bqef_users') || [
+    { u:'admin',  p:'admin',  r:'admin'  },
+    { u:'editor', p:'editor', r:'editor' },
+    { u:'lector', p:'lector', r:'lector' },
+  ];
+}
+
+function getResponsables() {
+  return ls('bqef_responsables') || ['Ana Molina','Carlos Vega','Luis Torres'];
+}
+
+// ══════════════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════════════
+function doLogin() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  const users = getUsers();
+  const found = users.find(x => x.u === u && x.p === p);
+  if (!found) { toast('Usuario o contraseña incorrectos', 'error'); return; }
+
+  state.currentUser = found;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  applyRole(found.r);
+  initApp();
+}
+
+document.getElementById('l-pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+function doLogout() {
+  state.currentUser = null;
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function applyRole(role) {
+  const chip = document.getElementById('ui-role-chip');
+  document.getElementById('ui-username').textContent = state.currentUser.u;
+  chip.className = `role-chip role-${role}`;
+  chip.textContent = role;
+
+  // Mostrar/ocultar tab config
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = role === 'admin' ? '' : 'none';
+  });
+
+  // Deshabilitar campos para lector
+  if (role === 'lector') {
+    document.getElementById('btn-guardar').disabled = true;
+    document.getElementById('btn-guardar').style.opacity = '.4';
+    ['f-conteo','f-ubicacion','f-responsable'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.disabled = true;
+    });
+  }
+}
+
+// ══════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════
+function initApp() {
+  cargarResponsablesUI();
+  cargarConfigUI();
+  cargarAdminUsersUI();
+  // Foco al input de código
+  setTimeout(() => document.getElementById('codigo-input').focus(), 200);
+}
+
+// ══════════════════════════════════════════════════
+// TABS
+// ══════════════════════════════════════════════════
+function switchTab(btn) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  const panel = document.getElementById('tab-' + btn.dataset.tab);
+  if (panel) panel.classList.add('active');
+  if (btn.dataset.tab === 'resumen') cargarResumen();
+}
+
+// ══════════════════════════════════════════════════
+// APPS SCRIPT CALLS
+// ══════════════════════════════════════════════════
+async function appsScriptCall(action, payload = {}) {
+  const { scriptUrl } = getCfg();
+  const params = new URLSearchParams({ action, ...payload });
+  const res = await fetch(scriptUrl + '?' + params.toString());
+  if (!res.ok) throw new Error('Error de red: ' + res.status);
+  return res.json();
+}
+
+// ══════════════════════════════════════════════════
+// BUSCAR PRODUCTO
+// ══════════════════════════════════════════════════
+let debounceTimer;
+function onCodigoInput() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(buscarProducto, 600);
+}
+
+async function buscarProducto() {
+  const codigo = document.getElementById('codigo-input').value.trim();
+  const preview = document.getElementById('product-preview');
+
+  if (!codigo) {
+    preview.className = 'product-preview';
+    preview.innerHTML = `<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>`;
+    return;
+  }
+
+  // Cache local
+  if (state.productCache[codigo]) {
+    mostrarProducto(codigo, state.productCache[codigo]);
+    return;
+  }
+
+  preview.className = 'product-preview';
+  preview.innerHTML = `<span class="spinner"></span><span style="margin-left:10px;font-size:13px;color:var(--text2)">Verificando…</span>`;
+
+  try {
+    const data = await appsScriptCall('buscarProducto', { codigo });
+    if (data.found) {
+      state.productCache[codigo] = data.descripcion;
+      mostrarProducto(codigo, data.descripcion);
+    } else {
+      preview.className = 'product-preview not-found';
+      preview.innerHTML = `
+        <span class="product-name" style="color:var(--danger)">⚠ Código <b>${codigo}</b> no encontrado en INV VALORIZADO</span>
+        <span class="product-status status-notfound">No en bodega</span>`;
+    }
+  } catch(e) {
+    preview.className = 'product-preview not-found';
+    preview.innerHTML = `<span style="color:var(--danger);font-size:13px">Error de conexión. Verifica la URL del script.</span>`;
+  }
+}
+
+function mostrarProducto(codigo, desc) {
+  const preview = document.getElementById('product-preview');
+  preview.className = 'product-preview found';
+  preview.innerHTML = `
+    <span class="product-name">${desc}</span>
+    <span class="product-status status-found">✓ Encontrado</span>`;
+}
+
+// ══════════════════════════════════════════════════
+// GUARDAR CONTEO
+// ══════════════════════════════════════════════════
+async function guardarConteo() {
+  const codigo      = document.getElementById('codigo-input').value.trim();
+  const conteo      = document.getElementById('f-conteo').value.trim();
+  const ubicacion   = document.getElementById('f-ubicacion').value.trim();
+  const responsable = document.getElementById('f-responsable').value;
+
+  if (!codigo)      { toast('Ingresa un código NAF', 'error'); return; }
+  if (!conteo)      { toast('Ingresa el conteo', 'error'); return; }
+  if (!responsable) { toast('Selecciona un responsable', 'error'); return; }
+
+  const desc = state.productCache[codigo] || '—';
+
+  const btn = document.getElementById('btn-guardar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Guardando…';
+
+  try {
+    const data = await appsScriptCall('guardarConteo', {
+      codigo, conteo, ubicacion, responsable,
+      usuario: state.currentUser.u,
+    });
+
+    if (data.success) {
+      toast('Registro guardado ✓', 'success');
+      addSessionLog({ codigo, desc, conteo, ubicacion, responsable, ok: true });
+      // limpiar
+      document.getElementById('codigo-input').value = '';
+      document.getElementById('f-conteo').value = '';
+      document.getElementById('f-ubicacion').value = '';
+      document.getElementById('product-preview').className = 'product-preview';
+      document.getElementById('product-preview').innerHTML =
+        `<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>`;
+      document.getElementById('codigo-input').focus();
+    } else {
+      throw new Error(data.message || 'Error al guardar');
+    }
+  } catch(e) {
+    toast('Error: ' + e.message, 'error');
+    addSessionLog({ codigo, desc, conteo, ubicacion, responsable, ok: false });
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = 'Guardar Registro ↗';
+}
+
+// ══════════════════════════════════════════════════
+// SESSION LOG
+// ══════════════════════════════════════════════════
+function addSessionLog(row) {
+  state.sessionLog.unshift(row);
+  const tbody = document.getElementById('session-log');
+  const empty = document.getElementById('session-empty');
+  empty.style.display = 'none';
+
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="code-cell">${row.codigo}</td>
+    <td>${row.desc}</td>
+    <td><b>${row.conteo}</b></td>
+    <td>${row.ubicacion || '—'}</td>
+    <td>${row.responsable}</td>
+    <td>
+      <span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;
+        background:${row.ok ? 'rgba(0,229,160,.15)' : 'rgba(255,71,87,.15)'};
+        color:${row.ok ? 'var(--accent)' : 'var(--danger)'}">
+        ${row.ok ? 'OK' : 'ERROR'}
+      </span>
+    </td>`;
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+// ══════════════════════════════════════════════════
+// RESUMEN
+// ══════════════════════════════════════════════════
+async function cargarResumen() {
+  const tbody = document.getElementById('resumen-body');
+  const empty = document.getElementById('resumen-empty');
+  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px"><span class="spinner"></span></td></tr>';
+  empty.style.display = 'none';
+
+  try {
+    const data = await appsScriptCall('getResumen');
+    state.resumenData = data.rows || [];
+    renderResumen(state.resumenData);
+
+    document.getElementById('stat-total').textContent = state.resumenData.length;
+    const hoy = new Date().toLocaleDateString('es-EC');
+    document.getElementById('stat-hoy').textContent =
+      state.resumenData.filter(r => r.fecha === hoy).length;
+    const resp = new Set(state.resumenData.map(r => r.responsable)).size;
+    document.getElementById('stat-resp').textContent = resp;
+  } catch(e) {
+    tbody.innerHTML = '';
+    empty.textContent = 'Error al cargar datos. Verifica la conexión.';
+    empty.style.display = 'block';
+  }
+}
+
+function renderResumen(rows) {
+  const tbody = document.getElementById('resumen-body');
+  const empty = document.getElementById('resumen-empty');
+  tbody.innerHTML = '';
+
+  if (!rows.length) {
+    empty.textContent = 'Sin datos registrados';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+
+  rows.forEach(r => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="code-cell">${r.codigo || '—'}</td>
+      <td>${r.descripcion || '—'}</td>
+      <td><b>${r.conteo || '—'}</b></td>
+      <td>${r.ubicacion || '—'}</td>
+      <td>${r.responsable || '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+function filtrarTabla() {
+  const q = document.getElementById('filtro-input').value.toLowerCase();
+  const filtered = state.resumenData.filter(r =>
+    (r.codigo || '').toLowerCase().includes(q) ||
+    (r.descripcion || '').toLowerCase().includes(q)
+  );
+  renderResumen(filtered);
+}
+
+// ══════════════════════════════════════════════════
+// RESPONSABLES UI
+// ══════════════════════════════════════════════════
+function cargarResponsablesUI() {
+  const select = document.getElementById('f-responsable');
+  const resp = getResponsables();
+  select.innerHTML = '<option value="">— Seleccionar —</option>';
+  resp.forEach(r => {
+    const opt = document.createElement('option');
+    opt.value = r; opt.textContent = r;
+    select.appendChild(opt);
+  });
+  renderResponsablesAdmin(resp);
+}
+
+function renderResponsablesAdmin(list) {
+  const container = document.getElementById('users-list');
+  if (!container) return;
+  container.innerHTML = '';
+  list.forEach((r, i) => {
+    const div = document.createElement('div');
+    div.className = 'user-row';
+    div.style.gridTemplateColumns = '1fr auto';
+    div.innerHTML = `
+      <input type="text" value="${r}" data-resp-idx="${i}" style="margin-bottom:0">
+      <button class="btn btn-danger" onclick="removeResponsable(${i})" style="padding:8px 12px">✕</button>`;
+    container.appendChild(div);
+  });
+}
+
+function addResponsable() {
+  const list = getResponsables();
+  list.push('Nuevo Responsable');
+  lss('bqef_responsables', list);
+  renderResponsablesAdmin(list);
+}
+
+function removeResponsable(idx) {
+  const list = getResponsables();
+  list.splice(idx, 1);
+  lss('bqef_responsables', list);
+  renderResponsablesAdmin(list);
+}
+
+function guardarResponsables() {
+  const inputs = document.querySelectorAll('[data-resp-idx]');
+  const list = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
+  lss('bqef_responsables', list);
+  cargarResponsablesUI();
+  toast('Responsables guardados ✓', 'success');
+}
+
+// ══════════════════════════════════════════════════
+// CONFIG UI
+// ══════════════════════════════════════════════════
+function cargarConfigUI() {
+  const cfg = getCfg();
+  const su = document.getElementById('cfg-script-url');
+  const shu = document.getElementById('cfg-sheet-url');
+  if (su) su.value = cfg.scriptUrl;
+  if (shu) shu.value = cfg.sheetUrl;
+}
+
+function guardarConfig() {
+  lss('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
+  lss('cfg_sheetUrl', document.getElementById('cfg-sheet-url').value.trim());
+  toast('Configuración guardada ✓', 'success');
+}
+
+// ══════════════════════════════════════════════════
+// ADMIN USERS
+// ══════════════════════════════════════════════════
+function cargarAdminUsersUI() {
+  renderAdminUsers(getUsers());
+}
+
+function renderAdminUsers(users) {
+  const container = document.getElementById('admin-users-list');
+  if (!container) return;
+  container.innerHTML = '';
+  users.forEach((u, i) => {
+    const div = document.createElement('div');
+    div.className = 'user-row';
+    div.innerHTML = `
+      <input type="text" value="${u.u}" placeholder="Usuario" data-user-idx="${i}" data-field="u" style="margin-bottom:0">
+      <select data-user-idx="${i}" data-field="r" style="margin-bottom:0">
+        <option value="admin"  ${u.r==='admin'  ?'selected':''}>Admin</option>
+        <option value="editor" ${u.r==='editor' ?'selected':''}>Editor</option>
+        <option value="lector" ${u.r==='lector' ?'selected':''}>Lector</option>
+      </select>
+      <button class="btn btn-danger" onclick="removeUser(${i})" style="padding:8px 12px">✕</button>`;
+    container.appendChild(div);
+  });
+}
+
+function addUser() {
+  const users = getUsers();
+  users.push({ u:'nuevo', p:'1234', r:'editor' });
+  lss('bqef_users', users);
+  renderAdminUsers(users);
+}
+
+function removeUser(idx) {
+  const users = getUsers();
+  users.splice(idx, 1);
+  lss('bqef_users', users);
+  renderAdminUsers(users);
+}
+
+function guardarUsuarios() {
+  const rows = document.querySelectorAll('#admin-users-list .user-row');
+  const users = getUsers();
+  rows.forEach((row, i) => {
+    const uInput = row.querySelector('[data-field="u"]');
+    const rSel   = row.querySelector('[data-field="r"]');
+    if (users[i]) {
+      users[i].u = uInput.value.trim();
+      users[i].r = rSel.value;
+    }
+  });
+  lss('bqef_users', users);
+  toast('Usuarios guardados ✓', 'success');
+}
+
+// ══════════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════════
+let toastTimer;
+function toast(msg, type = 'success') {
+  const bar = document.getElementById('status-bar');
+  bar.className = `status-bar show ${type}`;
+  bar.innerHTML = type === 'loading'
+    ? `<span class="spinner"></span> ${msg}`
+    : `${type === 'success' ? '✓' : '✕'} ${msg}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => bar.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
