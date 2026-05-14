@@ -6,16 +6,12 @@
 <title>BQEF · Inventario Físico</title>
 <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg:#0a0e1a; --surface:#111827; --surface2:#1c2537; --border:#2a3548;
-    --accent:#00e5a0; --accent2:#0096ff; --danger:#ff4757; --warn:#ffa502;
-    --text:#e8edf5; --text2:#7a8ba8;
-    --mono:'Space Mono',monospace; --sans:'DM Sans',sans-serif; --radius:10px;
-  }
+  :root{--bg:#0a0e1a;--surface:#111827;--surface2:#1c2537;--border:#2a3548;--accent:#00e5a0;--accent2:#0096ff;--danger:#ff4757;--warn:#ffa502;--text:#e8edf5;--text2:#7a8ba8;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:10px}
   *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
   body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
+  /* LOGIN */
   #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:var(--bg)}
   .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;position:relative;overflow:hidden}
   .login-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,229,160,.15),transparent 70%);pointer-events:none}
@@ -23,11 +19,14 @@
   .login-title{font-size:24px;font-weight:600;margin-bottom:32px;line-height:1.2}
   .login-title span{color:var(--accent)}
 
+  /* INPUTS */
   label{display:block;font-size:11px;font-family:var(--mono);letter-spacing:.12em;color:var(--text2);text-transform:uppercase;margin-bottom:6px}
   input[type=text],input[type=password],input[type=number],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:15px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:20px}
   input:focus,select:focus{border-color:var(--accent)}
   input:disabled,select:disabled{opacity:.4;cursor:not-allowed}
+  input.field-error{border-color:var(--danger)!important;background:rgba(255,71,87,.05)}
 
+  /* BUTTONS */
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.05em;transition:all .2s;text-transform:uppercase;font-weight:700}
   .btn-primary{background:var(--accent);color:#0a0e1a;width:100%}
   .btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}
@@ -38,8 +37,11 @@
   .btn-danger:hover{background:rgba(255,71,87,.25)}
   .btn-warn{background:rgba(255,165,2,.15);color:var(--warn);border:1px solid rgba(255,165,2,.3)}
   .btn-warn:hover{background:rgba(255,165,2,.25)}
+  .btn-success{background:rgba(0,229,160,.15);color:var(--accent);border:1px solid rgba(0,229,160,.3)}
+  .btn-success:hover{background:rgba(0,229,160,.25)}
   .btn-sm{padding:7px 14px;font-size:11px}
 
+  /* APP */
   #app{display:none;position:relative;z-index:1;min-height:100vh}
   .topbar{position:sticky;top:0;z-index:50;background:rgba(10,14,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
   .topbar-brand{font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
@@ -64,8 +66,9 @@
   .card-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px}
   .card-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
 
+  /* SCAN */
   .scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px}
-  .scan-input-wrap{position:relative;flex:1}
+  .scan-input-wrap{position:relative}
   .scan-input-wrap input{font-family:var(--mono);font-size:18px;padding:14px 48px 14px 16px;margin-bottom:0}
   .scan-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:20px}
   .product-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;min-height:52px;display:flex;align-items:center;transition:all .3s}
@@ -76,11 +79,15 @@
   .status-found{background:rgba(0,229,160,.15);color:var(--accent)}
   .status-notfound{background:rgba(255,71,87,.15);color:var(--danger)}
 
+  /* FORM */
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .form-group{display:flex;flex-direction:column}
   .form-group label{margin-bottom:6px}
   .form-group input,.form-group select{margin-bottom:0}
+  .field-hint{font-size:11px;color:var(--danger);font-family:var(--mono);margin-top:4px;display:none}
+  .field-hint.show{display:block}
 
+  /* TABLE */
   .table-wrap{overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
@@ -89,23 +96,27 @@
   tr:hover td{background:rgba(255,255,255,.02)}
   .code-cell{font-family:var(--mono);font-size:12px;color:var(--accent2)}
 
+  /* STATS */
   .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
   .stat-num{font-family:var(--mono);font-size:32px;color:var(--accent);display:block;line-height:1;margin-bottom:6px}
   .stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
 
+  /* CONFIG */
   .config-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
   .config-item:last-child{border-bottom:none}
   .config-label{font-weight:500;font-size:14px}
   .config-desc{font-size:12px;color:var(--text2);margin-top:2px}
   .config-input{width:300px;margin-bottom:0;font-size:13px}
 
+  /* USERS */
   .user-table-row{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(42,53,72,.4)}
   .user-table-row:last-child{border-bottom:none}
   .user-table-row input,.user-table-row select{margin-bottom:0;font-size:13px;padding:8px 10px}
   .user-table-header{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
   .user-table-header span{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
 
+  /* TOGGLE */
   .toggle{position:relative;display:inline-block;width:40px;height:22px}
   .toggle input{opacity:0;width:0;height:0}
   .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.3s}
@@ -113,7 +124,41 @@
   .toggle input:checked+.toggle-slider{background:var(--accent)}
   .toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#0a0e1a}
 
-  #status-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:12px 24px;font-size:13px;font-family:var(--mono);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;z-index:200;white-space:nowrap}
+  /* SERIES PANEL */
+  #series-panel{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
+  #series-panel.open{display:block}
+  .series-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+  .series-main{max-width:700px;margin:0 auto;padding:32px 24px}
+  .series-badge{background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:12px}
+  .series-badge-code{font-family:var(--mono);font-size:16px;color:var(--accent)}
+  .series-badge-desc{font-size:13px;color:var(--text2)}
+
+  .serie-scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:20px}
+  .serie-scan-row input{font-family:var(--mono);font-size:16px;margin-bottom:0}
+
+  .series-log{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+  .serie-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .serie-item.ok{border-color:var(--accent)}
+  .serie-item.warn{border-color:var(--warn)}
+  .serie-item.forced{border-color:var(--warn);background:rgba(255,165,2,.05)}
+  .serie-num{font-family:var(--mono);font-size:14px}
+  .serie-status{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+  .serie-ok{background:rgba(0,229,160,.15);color:var(--accent)}
+  .serie-forced{background:rgba(255,165,2,.15);color:var(--warn)}
+  .serie-error{background:rgba(255,71,87,.15);color:var(--danger)}
+
+  /* MODAL CONFIRMACIÓN SERIE */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+  .modal-overlay.open{opacity:1;pointer-events:auto}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:420px;max-width:90vw}
+  .modal-icon{font-size:32px;margin-bottom:12px;display:block}
+  .modal-title{font-size:18px;font-weight:600;margin-bottom:8px}
+  .modal-desc{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+  .modal-actions{display:flex;gap:10px}
+  .modal-actions .btn{width:auto;flex:1}
+
+  /* STATUS BAR */
+  #status-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:12px 24px;font-size:13px;font-family:var(--mono);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;z-index:500;white-space:nowrap}
   #status-bar.show{opacity:1;pointer-events:auto}
   #status-bar.success{border-color:var(--accent);color:var(--accent)}
   #status-bar.error{border-color:var(--danger);color:var(--danger)}
@@ -121,16 +166,8 @@
 
   .spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
   @keyframes spin{to{transform:rotate(360deg)}}
-
   .divider{height:1px;background:var(--border);margin:20px 0}
   .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;font-family:var(--mono);letter-spacing:.1em}
-
-  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
-  .modal-overlay.open{opacity:1;pointer-events:auto}
-  .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:400px;max-width:90vw}
-  .modal-title{font-family:var(--mono);font-size:13px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:24px}
-  .modal-actions{display:flex;gap:10px;margin-top:8px}
-  .modal-actions .btn{width:auto;flex:1}
 
   @media(max-width:600px){
     .form-grid{grid-template-columns:1fr}
@@ -139,6 +176,7 @@
     .config-input{width:100%}
     .config-item{flex-direction:column;align-items:flex-start;gap:10px}
     .user-table-row,.user-table-header{grid-template-columns:1fr 1fr}
+    .serie-scan-row{grid-template-columns:1fr}
   }
 </style>
 </head>
@@ -149,13 +187,11 @@
   <div class="login-card">
     <p class="login-logo">◈ BQEF System</p>
     <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
-    <label for="l-user">Usuario</label>
+    <label>Usuario</label>
     <input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
-    <label for="l-pass">Contraseña</label>
+    <label>Contraseña</label>
     <input type="password" id="l-pass" placeholder="••••••••">
-    <button class="btn btn-primary" id="btn-login" onclick="doLogin()">
-      <span>Ingresar</span><span>→</span>
-    </button>
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
   </div>
 </div>
@@ -197,34 +233,45 @@
         <div class="product-preview" id="product-preview">
           <span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>
         </div>
+
         <div class="form-grid">
           <div class="form-group">
-            <label>Conteo (cantidad)</label>
-            <input type="number" id="f-conteo" min="0" placeholder="0">
+            <label>Conteo (cantidad) <span style="color:var(--danger)">*</span></label>
+            <input type="number" id="f-conteo" min="0" placeholder="0" oninput="validarCampo('f-conteo','hint-conteo')">
+            <span class="field-hint" id="hint-conteo">Campo obligatorio</span>
           </div>
           <div class="form-group">
-            <label>Ubicación del producto</label>
-            <input type="text" id="f-ubicacion" placeholder="Ej: A-03-2">
+            <label>Ubicación del producto <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="f-ubicacion" placeholder="Ej: A-03-2" oninput="validarCampo('f-ubicacion','hint-ubicacion')">
+            <span class="field-hint" id="hint-ubicacion">Campo obligatorio</span>
           </div>
           <div class="form-group">
-            <label>Responsable</label>
-            <select id="f-responsable">
+            <label>Responsable <span style="color:var(--danger)">*</span></label>
+            <select id="f-responsable" onchange="validarCampo('f-responsable','hint-responsable')">
               <option value="">— Seleccionar —</option>
             </select>
+            <span class="field-hint" id="hint-responsable">Campo obligatorio</span>
           </div>
-          <div class="form-group" style="align-self:flex-end">
-            <button class="btn btn-primary" id="btn-guardar" onclick="guardarConteo()">
-              Guardar Registro ↗
-            </button>
+          <div class="form-group">
+            <label>Series <span style="color:var(--text2);font-size:10px">(opcional)</span></label>
+            <input type="text" id="f-series-display" placeholder="Se ingresarán al guardar" readonly
+              style="cursor:not-allowed;opacity:.6">
           </div>
+        </div>
+
+        <div style="margin-top:8px">
+          <button class="btn btn-primary" id="btn-guardar" onclick="iniciarGuardado()">
+            Guardar Registro ↗
+          </button>
         </div>
       </div>
 
+      <!-- Historial sesión -->
       <div class="card">
         <div class="card-title">Registros de esta sesión</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Código</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Series</th><th>Estado</th></tr></thead>
             <tbody id="session-log"></tbody>
           </table>
           <div class="empty" id="session-empty">Sin registros aún</div>
@@ -260,7 +307,7 @@
       <div class="card">
         <div class="card-title">Gestión de usuarios</div>
         <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
-          <p style="font-size:13px;color:var(--text2)">Usuarios guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
+          <p style="font-size:13px;color:var(--text2)">Guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
           <button class="btn btn-secondary btn-sm" onclick="cargarUsuarios()">↻ Actualizar</button>
         </div>
         <div class="user-table-header">
@@ -273,11 +320,13 @@
 
       <div class="card">
         <div class="card-title">Responsables del mes</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Nombres que aparecen en el desplegable al registrar conteos.</p>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Guardados en pestaña <b style="color:var(--accent)">RESPONSABLES</b> del Sheet — visibles en todos los dispositivos.</p>
         <div id="resp-list"></div>
         <div class="divider"></div>
-        <button class="btn btn-secondary" onclick="addResponsable()">+ Agregar</button>
-        <button class="btn btn-primary" onclick="guardarResponsables()" style="width:auto;margin-left:10px">Guardar responsables</button>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="nuevo-responsable" placeholder="Nombre del responsable" style="margin-bottom:0;flex:1;min-width:200px">
+          <button class="btn btn-secondary" onclick="agregarResponsable()">+ Agregar</button>
+        </div>
       </div>
     </div>
 
@@ -287,11 +336,15 @@
         <div class="card-title">Configuración general</div>
         <div class="config-item">
           <div><div class="config-label">URL del Apps Script (Web App)</div><div class="config-desc">Termina en /exec · Actualiza con cada nuevo deployment</div></div>
-          <input type="text" class="config-input" id="cfg-script-url" placeholder="https://script.google.com/macros/s/…/exec">
+          <input type="text" class="config-input" id="cfg-script-url">
         </div>
         <div class="config-item">
-          <div><div class="config-label">URL del Google Sheet activo</div><div class="config-desc">Cambia aquí cada mes cuando se renueva el archivo</div></div>
-          <input type="text" class="config-input" id="cfg-sheet-url" placeholder="https://docs.google.com/spreadsheets/d/…">
+          <div><div class="config-label">URL del Google Sheet activo</div><div class="config-desc">Cambia aquí cada mes</div></div>
+          <input type="text" class="config-input" id="cfg-sheet-url">
+        </div>
+        <div class="config-item">
+          <div><div class="config-label">Nombre de la bodega</div><div class="config-desc">Se usa para validar series contra la hoja SERIES</div></div>
+          <input type="text" class="config-input" id="cfg-bodega" placeholder="Ej: BQEF">
         </div>
         <div style="margin-top:20px">
           <button class="btn btn-primary" onclick="guardarConfig()" style="width:auto">Guardar configuración</button>
@@ -302,36 +355,99 @@
   </div>
 </div>
 
+<!-- ══════════════ PANEL DE SERIES ══════════════ -->
+<div id="series-panel">
+  <div class="series-topbar">
+    <div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px">Ingreso de Series</div>
+      <div style="font-size:13px;color:var(--text2)">Escanea o ingresa cada número de serie</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="finalizarSeries()">Finalizar y guardar ✓</button>
+  </div>
+
+  <div class="series-main">
+    <!-- Badge del artículo -->
+    <div class="series-badge">
+      <div>
+        <div class="series-badge-code" id="sp-codigo">—</div>
+        <div class="series-badge-desc" id="sp-desc">—</div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:11px;color:var(--text2)">Bodega</div>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--accent2)" id="sp-bodega">—</div>
+      </div>
+    </div>
+
+    <!-- Resumen series esperadas -->
+    <div class="card" id="sp-esperadas-card" style="margin-bottom:20px">
+      <div class="card-title">Series esperadas en bodega</div>
+      <div id="sp-esperadas-list"><div class="empty">Cargando…</div></div>
+    </div>
+
+    <!-- Scan serie -->
+    <div class="card">
+      <div class="card-title">Ingresar serie</div>
+      <div class="serie-scan-row">
+        <input type="text" id="serie-input" placeholder="Escanea o escribe el número de serie"
+          autocomplete="off" autocorrect="off"
+          onkeydown="if(event.key==='Enter') agregarSerie()">
+        <button class="btn btn-secondary" onclick="agregarSerie()">Agregar</button>
+      </div>
+    </div>
+
+    <!-- Log de series ingresadas -->
+    <div class="card">
+      <div class="card-title">Series ingresadas</div>
+      <div class="series-log" id="series-log"></div>
+      <div class="empty" id="series-empty">Sin series ingresadas aún</div>
+    </div>
+
+    <button class="btn btn-primary" onclick="finalizarSeries()" style="margin-bottom:40px">
+      ✓ Finalizar y guardar conteo
+    </button>
+  </div>
+</div>
+
+<!-- MODAL SERIE NO COINCIDE -->
+<div class="modal-overlay" id="modal-serie">
+  <div class="modal">
+    <span class="modal-icon" id="modal-serie-icon">⚠️</span>
+    <div class="modal-title" id="modal-serie-title">Serie no coincide</div>
+    <div class="modal-desc" id="modal-serie-desc"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="responderModal(false)">No guardar</button>
+      <button class="btn btn-warn" onclick="responderModal(true)">Guardar igual</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TIENE SERIE -->
+<div class="modal-overlay" id="modal-tiene-serie">
+  <div class="modal">
+    <span class="modal-icon">📋</span>
+    <div class="modal-title">¿El artículo tiene serie?</div>
+    <div class="modal-desc">¿Deseas ingresar números de serie para este artículo antes de guardar el conteo?</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="responderTieneSerie(false)">No, guardar directo</button>
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="responderTieneSerie(true)">Sí, ingresar series</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL USUARIO -->
 <div class="modal-overlay" id="modal-usuario">
   <div class="modal">
-    <div class="modal-title" id="modal-titulo">Nuevo usuario</div>
-    <div class="form-group">
-      <label>Usuario (login)</label>
-      <input type="text" id="m-usuario" placeholder="ej: jperez" autocomplete="off">
-    </div>
-    <div class="form-group">
-      <label>Contraseña <span style="color:var(--text2);font-size:10px">(vacío = no cambiar)</span></label>
-      <input type="password" id="m-pass" placeholder="••••••••">
-    </div>
-    <div class="form-group">
-      <label>Nombre completo</label>
-      <input type="text" id="m-nombre" placeholder="ej: Juan Pérez">
-    </div>
-    <div class="form-group">
-      <label>Rol</label>
-      <select id="m-rol">
-        <option value="admin">Admin</option>
-        <option value="editor" selected>Editor</option>
-        <option value="lector">Lector</option>
-      </select>
-    </div>
+    <div class="modal-title" id="modal-u-titulo">Nuevo usuario</div>
+    <div class="form-group"><label>Usuario (login)</label><input type="text" id="m-usuario" placeholder="ej: jperez" autocomplete="off"></div>
+    <div class="form-group"><label>Contraseña <span style="color:var(--text2);font-size:10px">(vacío = no cambiar)</span></label><input type="password" id="m-pass" placeholder="••••••••"></div>
+    <div class="form-group"><label>Nombre completo</label><input type="text" id="m-nombre" placeholder="ej: Juan Pérez"></div>
+    <div class="form-group"><label>Rol</label><select id="m-rol"><option value="admin">Admin</option><option value="editor" selected>Editor</option><option value="lector">Lector</option></select></div>
     <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
       <label style="margin:0">Activo</label>
       <label class="toggle"><input type="checkbox" id="m-activo" checked><span class="toggle-slider"></span></label>
     </div>
     <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+      <button class="btn btn-secondary" onclick="cerrarModalUsuario()">Cancelar</button>
       <button class="btn btn-primary" id="btn-modal-guardar" onclick="guardarUsuarioModal()">Guardar</button>
     </div>
   </div>
@@ -341,33 +457,36 @@
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-//  URL DEL SCRIPT — ya configurada
+//  CONFIG
 // ══════════════════════════════════════════════════════════════════
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzPbrT3oZGArVP2FmlA55JHSZkENKqQtjOtZzperSwa2-HKtjsnswozCt9AUByfADhv/exec';
 const DEFAULT_SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1cB7KaTUG-CnGM6dxkQCa74rIcmuLqsnyHG4DesaO4tE/';
+const DEFAULT_BODEGA     = '';
 
-function getScriptUrl() {
-  return localStorage.getItem('cfg_scriptUrl') || DEFAULT_SCRIPT_URL;
-}
-function getSheetUrl() {
-  return localStorage.getItem('cfg_sheetUrl') || DEFAULT_SHEET_URL;
-}
+function getScriptUrl() { return localStorage.getItem('cfg_scriptUrl') || DEFAULT_SCRIPT_URL; }
+function getSheetUrl()  { return localStorage.getItem('cfg_sheetUrl')  || DEFAULT_SHEET_URL; }
+function getBodega()    { return localStorage.getItem('cfg_bodega')    || DEFAULT_BODEGA; }
 
 // ══════════════════════════════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════════════════════════════
-let state = { currentUser: null, productCache: {}, resumenData: [] };
+let state = {
+  currentUser:  null,
+  productCache: {},
+  resumenData:  [],
+  // Datos del formulario actual (para series)
+  formActual: { codigo:'', descripcion:'', conteo:'', ubicacion:'', responsable:'' },
+  // Series ingresadas en la sesión de series
+  seriesIngresadas: [],
+};
 
 // ══════════════════════════════════════════════════════════════════
-//  API CALL
+//  API
 // ══════════════════════════════════════════════════════════════════
 async function api(action, payload = {}) {
-  const url = getScriptUrl();
+  const url    = getScriptUrl();
   const params = new URLSearchParams({ action, ...payload });
-  const res = await fetch(url + '?' + params.toString(), {
-    method: 'GET',
-    redirect: 'follow',
-  });
+  const res    = await fetch(url + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
   return res.json();
 }
@@ -380,13 +499,10 @@ async function doLogin() {
   const pass    = document.getElementById('l-pass').value;
   const errEl   = document.getElementById('login-error');
   const btn     = document.getElementById('btn-login');
-
   if (!usuario || !pass) { showLoginError('Ingresa usuario y contraseña'); return; }
-
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Verificando…';
   errEl.style.display = 'none';
-
   try {
     const data = await api('login', { usuario, pass });
     if (data.success) {
@@ -401,19 +517,15 @@ async function doLogin() {
   } catch(e) {
     showLoginError('Sin conexión al servidor. Verifica la URL del script en Config.');
   }
-
   btn.disabled = false;
   btn.innerHTML = '<span>Ingresar</span><span>→</span>';
 }
-
 function showLoginError(msg) {
   const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
 }
-
-document.getElementById('l-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
-document.getElementById('l-user').addEventListener('keydown', e => { if (e.key === 'Enter') document.getElementById('l-pass').focus(); });
+document.getElementById('l-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('l-user').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('l-pass').focus(); });
 
 function doLogout() {
   state.currentUser = null;
@@ -428,15 +540,12 @@ function applyRole(role, nombre) {
   const chip = document.getElementById('ui-role-chip');
   chip.className = `role-chip role-${role}`;
   chip.textContent = role;
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = role === 'admin' ? '' : 'none';
-  });
+  document.querySelectorAll('.admin-only').forEach(el => { el.style.display = role==='admin' ? '' : 'none'; });
   if (role === 'lector') {
     document.getElementById('btn-guardar').disabled = true;
     document.getElementById('btn-guardar').style.opacity = '.4';
     ['f-conteo','f-ubicacion','f-responsable'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.disabled = true;
+      const el = document.getElementById(id); if(el) el.disabled = true;
     });
   }
 }
@@ -464,6 +573,36 @@ function switchTab(btn) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  VALIDACIÓN DE CAMPOS
+// ══════════════════════════════════════════════════════════════════
+function validarCampo(inputId, hintId) {
+  const el   = document.getElementById(inputId);
+  const hint = document.getElementById(hintId);
+  const val  = el.value.trim();
+  if (!val) {
+    el.classList.add('field-error');
+    hint.classList.add('show');
+    return false;
+  } else {
+    el.classList.remove('field-error');
+    hint.classList.remove('show');
+    return true;
+  }
+}
+
+function validarFormulario() {
+  const codigo = document.getElementById('codigo-input').value.trim();
+  if (!codigo) { toast('Ingresa y verifica un código NAF', 'error'); return false; }
+  if (!state.productCache[codigo]) { toast('Verifica el código antes de guardar', 'error'); return false; }
+
+  const c1 = validarCampo('f-conteo',      'hint-conteo');
+  const c2 = validarCampo('f-ubicacion',   'hint-ubicacion');
+  const c3 = validarCampo('f-responsable', 'hint-responsable');
+  if (!c1 || !c2 || !c3) { toast('Completa todos los campos obligatorios', 'error'); return false; }
+  return true;
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  BUSCAR PRODUCTO
 // ══════════════════════════════════════════════════════════════════
 let debounceTimer;
@@ -481,10 +620,8 @@ async function buscarProducto() {
     return;
   }
   if (state.productCache[codigo]) { mostrarProducto(codigo, state.productCache[codigo]); return; }
-
   preview.className = 'product-preview';
   preview.innerHTML = `<span class="spinner"></span><span style="margin-left:10px;font-size:13px;color:var(--text2)">Verificando…</span>`;
-
   try {
     const data = await api('buscarProducto', { codigo });
     if (data.found) {
@@ -507,47 +644,245 @@ function mostrarProducto(codigo, desc) {
 }
 
 // ══════════════════════════════════════════════════════════════════
+//  INICIAR GUARDADO — pregunta si tiene serie
+// ══════════════════════════════════════════════════════════════════
+function iniciarGuardado() {
+  if (!validarFormulario()) return;
+
+  // Guardar datos del formulario actual en state
+  const codigo = document.getElementById('codigo-input').value.trim();
+  state.formActual = {
+    codigo,
+    descripcion: state.productCache[codigo] || '—',
+    conteo:      document.getElementById('f-conteo').value.trim(),
+    ubicacion:   document.getElementById('f-ubicacion').value.trim(),
+    responsable: document.getElementById('f-responsable').value,
+  };
+
+  // Mostrar modal ¿tiene serie?
+  document.getElementById('modal-tiene-serie').classList.add('open');
+}
+
+function responderTieneSerie(tiene) {
+  document.getElementById('modal-tiene-serie').classList.remove('open');
+  if (tiene) {
+    abrirPanelSeries();
+  } else {
+    guardarConteo();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════
 //  GUARDAR CONTEO
 // ══════════════════════════════════════════════════════════════════
 async function guardarConteo() {
-  const codigo      = document.getElementById('codigo-input').value.trim();
-  const conteo      = document.getElementById('f-conteo').value.trim();
-  const ubicacion   = document.getElementById('f-ubicacion').value.trim();
-  const responsable = document.getElementById('f-responsable').value;
-
-  if (!codigo)      { toast('Ingresa un código NAF', 'error'); return; }
-  if (!conteo)      { toast('Ingresa el conteo', 'error'); return; }
-  if (!responsable) { toast('Selecciona un responsable', 'error'); return; }
-
-  const desc = state.productCache[codigo] || '—';
-  const btn  = document.getElementById('btn-guardar');
+  const f   = state.formActual;
+  const btn = document.getElementById('btn-guardar');
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner"></span> Guardando…';
 
   try {
     const data = await api('guardarConteo', {
-      codigo, conteo, ubicacion, responsable,
-      usuario: state.currentUser.usuario,
+      codigo:      f.codigo,
+      conteo:      f.conteo,
+      ubicacion:   f.ubicacion,
+      responsable: f.responsable,
+      usuario:     state.currentUser.usuario,
     });
     if (data.success) {
       toast('Registro guardado ✓', 'success');
-      addSessionLog({ codigo, desc, conteo, ubicacion, responsable, ok: true });
-      document.getElementById('codigo-input').value = '';
-      document.getElementById('f-conteo').value = '';
-      document.getElementById('f-ubicacion').value = '';
-      document.getElementById('product-preview').className = 'product-preview';
-      document.getElementById('product-preview').innerHTML = `<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>`;
-      document.getElementById('codigo-input').focus();
+      addSessionLog({ ...f, series: state.seriesIngresadas.length, ok: true });
+      limpiarFormulario();
     } else {
       throw new Error(data.message || 'Error al guardar');
     }
   } catch(e) {
     toast('Error: ' + e.message, 'error');
-    addSessionLog({ codigo, desc, conteo, ubicacion, responsable, ok: false });
   }
 
   btn.disabled = false;
   btn.innerHTML = 'Guardar Registro ↗';
+}
+
+function limpiarFormulario() {
+  document.getElementById('codigo-input').value = '';
+  document.getElementById('f-conteo').value = '';
+  document.getElementById('f-ubicacion').value = '';
+  document.getElementById('f-responsable').value = '';
+  document.getElementById('f-series-display').value = '';
+  document.getElementById('product-preview').className = 'product-preview';
+  document.getElementById('product-preview').innerHTML = `<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>`;
+  ['f-conteo','f-ubicacion','f-responsable'].forEach(id => {
+    document.getElementById(id).classList.remove('field-error');
+  });
+  ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+  state.seriesIngresadas = [];
+  state.formActual = {};
+  document.getElementById('codigo-input').focus();
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  PANEL DE SERIES
+// ══════════════════════════════════════════════════════════════════
+async function abrirPanelSeries() {
+  const f      = state.formActual;
+  const bodega = getBodega();
+
+  state.seriesIngresadas = [];
+
+  document.getElementById('sp-codigo').textContent  = f.codigo;
+  document.getElementById('sp-desc').textContent    = f.descripcion;
+  document.getElementById('sp-bodega').textContent  = bodega || '(no configurada)';
+  document.getElementById('series-log').innerHTML   = '';
+  document.getElementById('series-empty').style.display = 'block';
+  document.getElementById('serie-input').value = '';
+
+  document.getElementById('series-panel').classList.add('open');
+  setTimeout(() => document.getElementById('serie-input').focus(), 300);
+
+  // Cargar series esperadas
+  cargarSeriesEsperadas(f.codigo, bodega);
+}
+
+async function cargarSeriesEsperadas(codigo, bodega) {
+  const container = document.getElementById('sp-esperadas-list');
+  container.innerHTML = '<div class="empty">Cargando…</div>';
+  try {
+    const data = await api('getSeriesPorCodigo', { codigo, bodega });
+    const series = data.series || [];
+    if (!series.length) {
+      container.innerHTML = '<div class="empty">No hay series registradas para este código/bodega</div>';
+      return;
+    }
+    container.innerHTML = '';
+    series.forEach(s => {
+      const div = document.createElement('div');
+      div.className = `serie-item ${s.registrada ? 'ok' : ''}`;
+      div.innerHTML = `
+        <span class="serie-num">${s.serie || '—'}</span>
+        <span class="serie-status ${s.registrada ? 'serie-ok' : ''}" style="${!s.registrada ? 'background:rgba(122,139,168,.15);color:var(--text2)' : ''}">
+          ${s.registrada ? '✓ Ya registrada' : 'Pendiente'}
+        </span>`;
+      container.appendChild(div);
+    });
+  } catch(e) {
+    container.innerHTML = `<div class="empty" style="color:var(--danger)">Error al cargar series</div>`;
+  }
+}
+
+// ── Resolver modal de serie no coincide ──
+let resolverModal = null;
+
+async function agregarSerie() {
+  const input  = document.getElementById('serie-input');
+  const numSerie = input.value.trim();
+  if (!numSerie) { input.focus(); return; }
+
+  const codigo = state.formActual.codigo;
+  const bodega = getBodega();
+
+  // Spinner en el input
+  input.disabled = true;
+
+  try {
+    const data = await api('validarSerie', { codigo, serie: numSerie, bodega });
+
+    if (data.encontrada && data.ok) {
+      // ✅ Todo coincide
+      await guardarSerieFisica(numSerie, false);
+      agregarSerieLog(numSerie, 'ok', 'Serie válida ✓');
+    } else if (data.encontrada && !data.codigoOk) {
+      // ❌ La serie existe pero con otro código
+      const forzar = await mostrarModalSerie(
+        '⚠️ Código no coincide',
+        `La serie <b>${numSerie}</b> está registrada en la hoja SERIES bajo el código <b>${data.codigoHoja}</b>, no bajo <b>${codigo}</b>.<br><br>¿Deseas guardarla igual como serie física?`
+      );
+      if (forzar) {
+        await guardarSerieFisica(numSerie, true);
+        agregarSerieLog(numSerie, 'forced', 'Guardada (código no coincide)');
+      } else {
+        agregarSerieLog(numSerie, 'error', 'No guardada');
+      }
+    } else if (data.encontrada && !data.bodegaOk) {
+      // ❌ La serie existe pero en otra bodega
+      const forzar = await mostrarModalSerie(
+        '⚠️ Bodega no coincide',
+        `La serie <b>${numSerie}</b> pertenece a la bodega <b>${data.bodegaHoja}</b>, no a <b>${bodega}</b>.<br><br>¿Deseas guardarla igual como serie física?`
+      );
+      if (forzar) {
+        await guardarSerieFisica(numSerie, true);
+        agregarSerieLog(numSerie, 'forced', 'Guardada (bodega no coincide)');
+      } else {
+        agregarSerieLog(numSerie, 'error', 'No guardada');
+      }
+    } else {
+      // ❌ Serie no encontrada en la hoja
+      const forzar = await mostrarModalSerie(
+        '⚠️ Serie no encontrada',
+        `La serie <b>${numSerie}</b> no está registrada en la hoja SERIES para el código <b>${codigo}</b>.<br><br>¿Deseas guardarla igual como serie física?`
+      );
+      if (forzar) {
+        await guardarSerieFisica(numSerie, true);
+        agregarSerieLog(numSerie, 'forced', 'Guardada (no estaba en hoja)');
+      } else {
+        agregarSerieLog(numSerie, 'error', 'No guardada');
+      }
+    }
+  } catch(e) {
+    toast('Error al validar serie: ' + e.message, 'error');
+  }
+
+  input.disabled = false;
+  input.value = '';
+  input.focus();
+}
+
+async function guardarSerieFisica(numSerie, forzar) {
+  const data = await api('guardarSerieFisica', {
+    codigo: state.formActual.codigo,
+    serie:  numSerie,
+    bodega: getBodega(),
+    forzar: forzar.toString(),
+  });
+  if (!data.success) throw new Error(data.message);
+  state.seriesIngresadas.push(numSerie);
+}
+
+function agregarSerieLog(serie, tipo, label) {
+  document.getElementById('series-empty').style.display = 'none';
+  const log = document.getElementById('series-log');
+  const div = document.createElement('div');
+  div.className = `serie-item ${tipo}`;
+  const colorMap = { ok:'serie-ok', forced:'serie-forced', error:'serie-error' };
+  div.innerHTML = `
+    <span class="serie-num">${serie}</span>
+    <span class="serie-status ${colorMap[tipo]}">${label}</span>`;
+  log.insertBefore(div, log.firstChild);
+}
+
+function mostrarModalSerie(titulo, desc) {
+  return new Promise(resolve => {
+    document.getElementById('modal-serie-title').textContent = titulo;
+    document.getElementById('modal-serie-desc').innerHTML   = desc;
+    document.getElementById('modal-serie').classList.add('open');
+    resolverModal = resolve;
+  });
+}
+
+function responderModal(forzar) {
+  document.getElementById('modal-serie').classList.remove('open');
+  if (resolverModal) { resolverModal(forzar); resolverModal = null; }
+}
+
+async function finalizarSeries() {
+  document.getElementById('series-panel').classList.remove('open');
+  // Actualizar display de series en el formulario
+  const n = state.seriesIngresadas.length;
+  document.getElementById('f-series-display').value = n > 0 ? `${n} serie(s) ingresada(s)` : '';
+  // Guardar el conteo
+  await guardarConteo();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -559,10 +894,11 @@ function addSessionLog(row) {
   const tr = document.createElement('tr');
   tr.innerHTML = `
     <td class="code-cell">${row.codigo}</td>
-    <td>${row.desc}</td>
+    <td>${row.descripcion}</td>
     <td><b>${row.conteo}</b></td>
     <td>${row.ubicacion||'—'}</td>
     <td>${row.responsable}</td>
+    <td style="font-family:var(--mono);font-size:11px">${row.series > 0 ? row.series+' serie(s)' : '—'}</td>
     <td><span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;
       background:${row.ok?'rgba(0,229,160,.15)':'rgba(255,71,87,.15)'};
       color:${row.ok?'var(--accent)':'var(--danger)'}">
@@ -615,8 +951,71 @@ function renderResumen(rows) {
 function filtrarTabla() {
   const q = document.getElementById('filtro-input').value.toLowerCase();
   renderResumen(state.resumenData.filter(r =>
-    (r.codigo||'').toLowerCase().includes(q) || (r.descripcion||'').toLowerCase().includes(q)
+    (r.codigo||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q)
   ));
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  RESPONSABLES — desde Sheet
+// ══════════════════════════════════════════════════════════════════
+async function cargarResponsablesUI() {
+  try {
+    const data = await api('getResponsables');
+    const resp = data.responsables || [];
+    const select = document.getElementById('f-responsable');
+    select.innerHTML = '<option value="">— Seleccionar —</option>';
+    resp.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r; opt.textContent = r;
+      select.appendChild(opt);
+    });
+    renderResponsablesAdmin(resp);
+  } catch(e) {
+    console.warn('No se pudieron cargar responsables:', e);
+  }
+}
+
+function renderResponsablesAdmin(list) {
+  const container = document.getElementById('resp-list');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!list.length) {
+    container.innerHTML = '<div class="empty">Sin responsables. Agrega el primero.</div>';
+    return;
+  }
+  list.forEach(r => {
+    const div = document.createElement('div');
+    div.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:8px';
+    div.innerHTML = `
+      <span style="font-size:14px;padding:10px 0">${r}</span>
+      <button class="btn btn-danger btn-sm" onclick="eliminarResponsable('${r.replace(/'/g,"\\'")}')">✕</button>`;
+    container.appendChild(div);
+  });
+}
+
+async function agregarResponsable() {
+  const input  = document.getElementById('nuevo-responsable');
+  const nombre = input.value.trim();
+  if (!nombre) { toast('Ingresa un nombre', 'error'); return; }
+  try {
+    const data = await api('guardarResponsable', { nombre });
+    if (data.success) {
+      toast('Responsable agregado ✓', 'success');
+      input.value = '';
+      cargarResponsablesUI();
+    } else {
+      toast(data.message, 'error');
+    }
+  } catch(e) { toast('Error de conexión', 'error'); }
+}
+
+async function eliminarResponsable(nombre) {
+  if (!confirm(`¿Eliminar a "${nombre}" de la lista?`)) return;
+  try {
+    const data = await api('eliminarResponsable', { nombre });
+    if (data.success) { toast('Responsable eliminado ✓', 'success'); cargarResponsablesUI(); }
+    else toast(data.message, 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -646,17 +1045,14 @@ function renderUsersTable(users) {
       <span class="role-chip role-${u.rol}">${u.rol}</span>
       <span style="font-size:12px;color:${u.activo?'var(--accent)':'var(--danger)'};font-family:var(--mono)">${u.activo?'SI':'NO'}</span>
       <button class="btn btn-warn btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>✎</button>
-      <button class="btn btn-danger btn-sm" onclick="confirmarEliminar('${u.usuario}')">✕</button>`;
+      <button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario('${u.usuario}')">✕</button>`;
     container.appendChild(row);
   });
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  MODAL USUARIO
-// ══════════════════════════════════════════════════════════════════
 function abrirModalUsuario(user) {
-  document.getElementById('modal-titulo').textContent = user ? 'Editar usuario' : 'Nuevo usuario';
-  document.getElementById('m-usuario').value   = user ? user.usuario : '';
+  document.getElementById('modal-u-titulo').textContent = user ? 'Editar usuario' : 'Nuevo usuario';
+  document.getElementById('m-usuario').value    = user ? user.usuario : '';
   document.getElementById('m-usuario').disabled = !!user;
   document.getElementById('m-pass').value    = '';
   document.getElementById('m-nombre').value  = user ? user.nombre  : '';
@@ -665,9 +1061,7 @@ function abrirModalUsuario(user) {
   document.getElementById('modal-usuario').classList.add('open');
 }
 
-function cerrarModal() {
-  document.getElementById('modal-usuario').classList.remove('open');
-}
+function cerrarModalUsuario() { document.getElementById('modal-usuario').classList.remove('open'); }
 
 async function guardarUsuarioModal() {
   const usuario = document.getElementById('m-usuario').value.trim();
@@ -675,31 +1069,18 @@ async function guardarUsuarioModal() {
   const nombre  = document.getElementById('m-nombre').value.trim();
   const rol     = document.getElementById('m-rol').value;
   const activo  = document.getElementById('m-activo').checked;
-
   if (!usuario) { toast('Ingresa un nombre de usuario', 'error'); return; }
-
   const btn = document.getElementById('btn-modal-guardar');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span>';
-
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>';
   try {
     const data = await api('guardarUsuario', { usuario, pass, nombre, rol, activo });
-    if (data.success) {
-      toast('Usuario guardado ✓', 'success');
-      cerrarModal();
-      cargarUsuarios();
-    } else {
-      toast('Error: ' + data.message, 'error');
-    }
-  } catch(e) {
-    toast('Error de conexión', 'error');
-  }
-
-  btn.disabled = false;
-  btn.innerHTML = 'Guardar';
+    if (data.success) { toast('Usuario guardado ✓', 'success'); cerrarModalUsuario(); cargarUsuarios(); }
+    else toast('Error: ' + data.message, 'error');
+  } catch(e) { toast('Error de conexión', 'error'); }
+  btn.disabled = false; btn.innerHTML = 'Guardar';
 }
 
-async function confirmarEliminar(usuario) {
+async function confirmarEliminarUsuario(usuario) {
   if (!confirm(`¿Eliminar al usuario "${usuario}"?`)) return;
   try {
     const data = await api('eliminarUsuario', { usuario });
@@ -709,63 +1090,8 @@ async function confirmarEliminar(usuario) {
 }
 
 document.getElementById('modal-usuario').addEventListener('click', function(e) {
-  if (e.target === this) cerrarModal();
+  if (e.target === this) cerrarModalUsuario();
 });
-
-// ══════════════════════════════════════════════════════════════════
-//  RESPONSABLES
-// ══════════════════════════════════════════════════════════════════
-function getResponsables() {
-  try { return JSON.parse(localStorage.getItem('bqef_responsables')) || []; } catch { return []; }
-}
-
-function cargarResponsablesUI() {
-  const select = document.getElementById('f-responsable');
-  const resp = getResponsables();
-  select.innerHTML = '<option value="">— Seleccionar —</option>';
-  resp.forEach(r => {
-    const opt = document.createElement('option');
-    opt.value = r; opt.textContent = r;
-    select.appendChild(opt);
-  });
-  renderResponsablesAdmin(resp);
-}
-
-function renderResponsablesAdmin(list) {
-  const container = document.getElementById('resp-list');
-  if (!container) return;
-  container.innerHTML = '';
-  list.forEach((r, i) => {
-    const div = document.createElement('div');
-    div.style.cssText = 'display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:8px';
-    div.innerHTML = `
-      <input type="text" value="${r}" data-resp-idx="${i}" style="margin-bottom:0">
-      <button class="btn btn-danger btn-sm" onclick="removeResponsable(${i})">✕</button>`;
-    container.appendChild(div);
-  });
-}
-
-function addResponsable() {
-  const list = getResponsables();
-  list.push('Nuevo Responsable');
-  localStorage.setItem('bqef_responsables', JSON.stringify(list));
-  renderResponsablesAdmin(list);
-}
-
-function removeResponsable(idx) {
-  const list = getResponsables();
-  list.splice(idx, 1);
-  localStorage.setItem('bqef_responsables', JSON.stringify(list));
-  renderResponsablesAdmin(list);
-}
-
-function guardarResponsables() {
-  const inputs = document.querySelectorAll('[data-resp-idx]');
-  const list = Array.from(inputs).map(i => i.value.trim()).filter(Boolean);
-  localStorage.setItem('bqef_responsables', JSON.stringify(list));
-  cargarResponsablesUI();
-  toast('Responsables guardados ✓', 'success');
-}
 
 // ══════════════════════════════════════════════════════════════════
 //  CONFIG
@@ -773,13 +1099,16 @@ function guardarResponsables() {
 function cargarConfigUI() {
   const su  = document.getElementById('cfg-script-url');
   const shu = document.getElementById('cfg-sheet-url');
+  const sb  = document.getElementById('cfg-bodega');
   if (su)  su.value  = getScriptUrl();
   if (shu) shu.value = getSheetUrl();
+  if (sb)  sb.value  = getBodega();
 }
 
 function guardarConfig() {
   localStorage.setItem('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
   localStorage.setItem('cfg_sheetUrl',  document.getElementById('cfg-sheet-url').value.trim());
+  localStorage.setItem('cfg_bodega',    document.getElementById('cfg-bodega').value.trim());
   toast('Configuración guardada ✓', 'success');
 }
 
