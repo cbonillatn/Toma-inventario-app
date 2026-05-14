@@ -16,7 +16,6 @@
   body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
   body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
 
-  /* LOGIN */
   #login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:var(--bg)}
   .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;position:relative;overflow:hidden}
   .login-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,229,160,.15),transparent 70%);pointer-events:none}
@@ -24,13 +23,11 @@
   .login-title{font-size:24px;font-weight:600;margin-bottom:32px;line-height:1.2}
   .login-title span{color:var(--accent)}
 
-  /* INPUTS */
   label{display:block;font-size:11px;font-family:var(--mono);letter-spacing:.12em;color:var(--text2);text-transform:uppercase;margin-bottom:6px}
   input[type=text],input[type=password],input[type=number],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:15px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:20px}
   input:focus,select:focus{border-color:var(--accent)}
   input:disabled,select:disabled{opacity:.4;cursor:not-allowed}
 
-  /* BUTTONS */
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.05em;transition:all .2s;text-transform:uppercase;font-weight:700}
   .btn-primary{background:var(--accent);color:#0a0e1a;width:100%}
   .btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}
@@ -43,7 +40,6 @@
   .btn-warn:hover{background:rgba(255,165,2,.25)}
   .btn-sm{padding:7px 14px;font-size:11px}
 
-  /* APP SHELL */
   #app{display:none;position:relative;z-index:1;min-height:100vh}
   .topbar{position:sticky;top:0;z-index:50;background:rgba(10,14,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
   .topbar-brand{font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
@@ -54,26 +50,20 @@
   .role-editor{background:rgba(0,150,255,.15);color:var(--accent2)}
   .role-lector{background:rgba(122,139,168,.15);color:var(--text2)}
 
-  /* MAIN */
   .main{max-width:920px;margin:0 auto;padding:32px 24px}
-
-  /* TABS */
   .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;margin-bottom:28px}
   .tab-btn{flex:1;background:none;border:none;border-radius:8px;color:var(--text2);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:10px;text-transform:uppercase;transition:all .2s}
   .tab-btn.active{background:var(--surface2);color:var(--accent);border:1px solid var(--border)}
   .tab-btn:hover:not(.active){color:var(--text)}
 
-  /* PANELS */
   .panel{display:none}
   .panel.active{display:block;animation:fadeUp .3s ease}
   @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 
-  /* CARDS */
   .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
   .card-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px}
   .card-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
 
-  /* SCAN */
   .scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px}
   .scan-input-wrap{position:relative;flex:1}
   .scan-input-wrap input{font-family:var(--mono);font-size:18px;padding:14px 48px 14px 16px;margin-bottom:0}
@@ -86,14 +76,11 @@
   .status-found{background:rgba(0,229,160,.15);color:var(--accent)}
   .status-notfound{background:rgba(255,71,87,.15);color:var(--danger)}
 
-  /* FORM */
   .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
   .form-group{display:flex;flex-direction:column}
-  .form-group.full{grid-column:1/-1}
   .form-group label{margin-bottom:6px}
   .form-group input,.form-group select{margin-bottom:0}
 
-  /* TABLE */
   .table-wrap{overflow-x:auto}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
@@ -102,27 +89,23 @@
   tr:hover td{background:rgba(255,255,255,.02)}
   .code-cell{font-family:var(--mono);font-size:12px;color:var(--accent2)}
 
-  /* STATS */
   .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
   .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
   .stat-num{font-family:var(--mono);font-size:32px;color:var(--accent);display:block;line-height:1;margin-bottom:6px}
   .stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
 
-  /* CONFIG */
   .config-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
   .config-item:last-child{border-bottom:none}
   .config-label{font-weight:500;font-size:14px}
   .config-desc{font-size:12px;color:var(--text2);margin-top:2px}
   .config-input{width:300px;margin-bottom:0;font-size:13px}
 
-  /* USERS TABLE */
   .user-table-row{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(42,53,72,.4)}
   .user-table-row:last-child{border-bottom:none}
   .user-table-row input,.user-table-row select{margin-bottom:0;font-size:13px;padding:8px 10px}
   .user-table-header{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
   .user-table-header span{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
 
-  /* TOGGLE */
   .toggle{position:relative;display:inline-block;width:40px;height:22px}
   .toggle input{opacity:0;width:0;height:0}
   .toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.3s}
@@ -130,7 +113,6 @@
   .toggle input:checked+.toggle-slider{background:var(--accent)}
   .toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#0a0e1a}
 
-  /* STATUS BAR */
   #status-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:12px 24px;font-size:13px;font-family:var(--mono);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;z-index:200;white-space:nowrap}
   #status-bar.show{opacity:1;pointer-events:auto}
   #status-bar.success{border-color:var(--accent);color:var(--accent)}
@@ -143,7 +125,6 @@
   .divider{height:1px;background:var(--border);margin:20px 0}
   .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;font-family:var(--mono);letter-spacing:.1em}
 
-  /* MODAL */
   .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);z-index:300;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
   .modal-overlay.open{opacity:1;pointer-events:auto}
   .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:400px;max-width:90vw}
@@ -163,7 +144,7 @@
 </head>
 <body>
 
-<!-- ══ LOGIN ══ -->
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
     <p class="login-logo">◈ BQEF System</p>
@@ -176,13 +157,10 @@
       <span>Ingresar</span><span>→</span>
     </button>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
-    <p style="margin-top:16px;font-size:11px;color:var(--text2);text-align:center;font-family:var(--mono)">
-      Conectado a Google Sheets
-    </p>
   </div>
 </div>
 
-<!-- ══ APP ══ -->
+<!-- APP -->
 <div id="app">
   <div class="topbar">
     <span class="topbar-brand">◈ BQEF · Inventario</span>
@@ -203,7 +181,7 @@
       <button class="tab-btn admin-only" data-tab="config" onclick="switchTab(this)" style="display:none">▪ Config.</button>
     </div>
 
-    <!-- ── TAB REGISTRAR ── -->
+    <!-- TAB REGISTRAR -->
     <div class="panel active" id="tab-ingresar">
       <div class="card">
         <div class="card-title">Escanear / Ingresar Código NAF</div>
@@ -254,7 +232,7 @@
       </div>
     </div>
 
-    <!-- ── TAB RESUMEN ── -->
+    <!-- TAB RESUMEN -->
     <div class="panel" id="tab-resumen">
       <div class="stats-row">
         <div class="stat-card"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Total registros</span></div>
@@ -277,43 +255,38 @@
       </div>
     </div>
 
-    <!-- ── TAB USUARIOS (admin) ── -->
+    <!-- TAB USUARIOS -->
     <div class="panel" id="tab-usuarios">
       <div class="card">
         <div class="card-title">Gestión de usuarios</div>
         <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
-          <p style="font-size:13px;color:var(--text2)">Los usuarios se guardan en la pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
+          <p style="font-size:13px;color:var(--text2)">Usuarios guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
           <button class="btn btn-secondary btn-sm" onclick="cargarUsuarios()">↻ Actualizar</button>
         </div>
-
-        <!-- Header tabla -->
         <div class="user-table-header">
-          <span>Usuario</span><span>Nombre completo</span><span>Rol</span><span>Activo</span><span>Edit</span><span>Borrar</span>
+          <span>Usuario</span><span>Nombre</span><span>Rol</span><span>Activo</span><span>Edit</span><span>Borrar</span>
         </div>
         <div id="users-table-body"></div>
-
         <div class="divider"></div>
         <button class="btn btn-secondary" onclick="abrirModalUsuario(null)">+ Nuevo usuario</button>
       </div>
 
       <div class="card">
         <div class="card-title">Responsables del mes</div>
-        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">
-          Lista de nombres que aparecen en el desplegable al registrar conteos.
-        </p>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Nombres que aparecen en el desplegable al registrar conteos.</p>
         <div id="resp-list"></div>
         <div class="divider"></div>
-        <button class="btn btn-secondary" onclick="addResponsable()">+ Agregar responsable</button>
+        <button class="btn btn-secondary" onclick="addResponsable()">+ Agregar</button>
         <button class="btn btn-primary" onclick="guardarResponsables()" style="width:auto;margin-left:10px">Guardar responsables</button>
       </div>
     </div>
 
-    <!-- ── TAB CONFIG (admin) ── -->
+    <!-- TAB CONFIG -->
     <div class="panel" id="tab-config">
       <div class="card">
         <div class="card-title">Configuración general</div>
         <div class="config-item">
-          <div><div class="config-label">URL del Apps Script (Web App)</div><div class="config-desc">Termina en /exec · Se actualiza con cada nuevo deployment</div></div>
+          <div><div class="config-label">URL del Apps Script (Web App)</div><div class="config-desc">Termina en /exec · Actualiza con cada nuevo deployment</div></div>
           <input type="text" class="config-input" id="cfg-script-url" placeholder="https://script.google.com/macros/s/…/exec">
         </div>
         <div class="config-item">
@@ -326,10 +299,10 @@
       </div>
     </div>
 
-  </div><!-- /main -->
-</div><!-- /app -->
+  </div>
+</div>
 
-<!-- ══ MODAL USUARIO ══ -->
+<!-- MODAL USUARIO -->
 <div class="modal-overlay" id="modal-usuario">
   <div class="modal">
     <div class="modal-title" id="modal-titulo">Nuevo usuario</div>
@@ -338,7 +311,7 @@
       <input type="text" id="m-usuario" placeholder="ej: jperez" autocomplete="off">
     </div>
     <div class="form-group">
-      <label>Contraseña <span style="color:var(--text2);font-size:10px">(dejar vacío para no cambiar)</span></label>
+      <label>Contraseña <span style="color:var(--text2);font-size:10px">(vacío = no cambiar)</span></label>
       <input type="password" id="m-pass" placeholder="••••••••">
     </div>
     <div class="form-group">
@@ -355,10 +328,7 @@
     </div>
     <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
       <label style="margin:0">Activo</label>
-      <label class="toggle">
-        <input type="checkbox" id="m-activo" checked>
-        <span class="toggle-slider"></span>
-      </label>
+      <label class="toggle"><input type="checkbox" id="m-activo" checked><span class="toggle-slider"></span></label>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
@@ -367,41 +337,43 @@
   </div>
 </div>
 
-<!-- STATUS BAR -->
 <div id="status-bar"></div>
 
 <script>
 // ══════════════════════════════════════════════════════════════════
-//  CONFIG
+//  URL DEL SCRIPT — ya configurada
 // ══════════════════════════════════════════════════════════════════
 const DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwdxEw4IITRYfGq5fi_8cIkG_V8Alw7AQSj7TGokOI72QOdTWfZ3Wx60tl72jo_3Vhx/exec';
 const DEFAULT_SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1cB7KaTUG-CnGM6dxkQCa74rIcmuLqsnyHG4DesaO4tE/';
 
-function getCfg() {
-  return {
-    scriptUrl: localStorage.getItem('cfg_scriptUrl') || DEFAULT_SCRIPT_URL,
-    sheetUrl:  localStorage.getItem('cfg_sheetUrl')  || DEFAULT_SHEET_URL,
-  };
+function getScriptUrl() {
+  return localStorage.getItem('cfg_scriptUrl') || DEFAULT_SCRIPT_URL;
+}
+function getSheetUrl() {
+  return localStorage.getItem('cfg_sheetUrl') || DEFAULT_SHEET_URL;
 }
 
 // ══════════════════════════════════════════════════════════════════
 //  ESTADO
 // ══════════════════════════════════════════════════════════════════
-let state = { currentUser: null, productCache: {}, sessionLog: [], resumenData: [] };
+let state = { currentUser: null, productCache: {}, resumenData: [] };
 
 // ══════════════════════════════════════════════════════════════════
-//  APPS SCRIPT CALL
+//  API CALL
 // ══════════════════════════════════════════════════════════════════
 async function api(action, payload = {}) {
-  const { scriptUrl } = getCfg();
+  const url = getScriptUrl();
   const params = new URLSearchParams({ action, ...payload });
-  const res = await fetch(scriptUrl + '?' + params.toString());
+  const res = await fetch(url + '?' + params.toString(), {
+    method: 'GET',
+    redirect: 'follow',
+  });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
   return res.json();
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  LOGIN — ahora valida contra el Sheet
+//  LOGIN
 // ══════════════════════════════════════════════════════════════════
 async function doLogin() {
   const usuario = document.getElementById('l-user').value.trim();
@@ -456,11 +428,9 @@ function applyRole(role, nombre) {
   const chip = document.getElementById('ui-role-chip');
   chip.className = `role-chip role-${role}`;
   chip.textContent = role;
-
   document.querySelectorAll('.admin-only').forEach(el => {
     el.style.display = role === 'admin' ? '' : 'none';
   });
-
   if (role === 'lector') {
     document.getElementById('btn-guardar').disabled = true;
     document.getElementById('btn-guardar').style.opacity = '.4';
@@ -526,7 +496,7 @@ async function buscarProducto() {
     }
   } catch(e) {
     preview.className = 'product-preview not-found';
-    preview.innerHTML = `<span style="color:var(--danger);font-size:13px">Error de conexión. Verifica la URL del script en Config.</span>`;
+    preview.innerHTML = `<span style="color:var(--danger);font-size:13px">Error de conexión.</span>`;
   }
 }
 
@@ -591,12 +561,12 @@ function addSessionLog(row) {
     <td class="code-cell">${row.codigo}</td>
     <td>${row.desc}</td>
     <td><b>${row.conteo}</b></td>
-    <td>${row.ubicacion || '—'}</td>
+    <td>${row.ubicacion||'—'}</td>
     <td>${row.responsable}</td>
     <td><span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;
-      background:${row.ok ? 'rgba(0,229,160,.15)' : 'rgba(255,71,87,.15)'};
-      color:${row.ok ? 'var(--accent)' : 'var(--danger)'}">
-      ${row.ok ? 'OK' : 'ERROR'}</span></td>`;
+      background:${row.ok?'rgba(0,229,160,.15)':'rgba(255,71,87,.15)'};
+      color:${row.ok?'var(--accent)':'var(--danger)'}">
+      ${row.ok?'OK':'ERROR'}</span></td>`;
   tbody.insertBefore(tr, tbody.firstChild);
 }
 
@@ -650,7 +620,7 @@ function filtrarTabla() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  USUARIOS — cargar desde Sheet
+//  USUARIOS
 // ══════════════════════════════════════════════════════════════════
 async function cargarUsuarios() {
   const container = document.getElementById('users-table-body');
@@ -659,25 +629,22 @@ async function cargarUsuarios() {
     const data = await api('getUsuarios');
     renderUsersTable(data.users || []);
   } catch(e) {
-    container.innerHTML = `<p style="color:var(--danger);font-size:13px;padding:16px">Error al cargar usuarios: ${e.message}</p>`;
+    container.innerHTML = `<p style="color:var(--danger);font-size:13px;padding:16px">Error: ${e.message}</p>`;
   }
 }
 
 function renderUsersTable(users) {
   const container = document.getElementById('users-table-body');
   container.innerHTML = '';
-  if (!users.length) {
-    container.innerHTML = '<div class="empty">Sin usuarios registrados</div>';
-    return;
-  }
+  if (!users.length) { container.innerHTML = '<div class="empty">Sin usuarios</div>'; return; }
   users.forEach(u => {
     const row = document.createElement('div');
     row.className = 'user-table-row';
     row.innerHTML = `
       <span style="font-family:var(--mono);font-size:13px;color:var(--accent2)">${u.usuario}</span>
-      <span style="font-size:13px">${u.nombre || '—'}</span>
-      <span class="role-chip role-${u.rol}" style="text-align:center">${u.rol}</span>
-      <span style="font-size:12px;color:${u.activo ? 'var(--accent)' : 'var(--danger)'};font-family:var(--mono)">${u.activo ? 'SI' : 'NO'}</span>
+      <span style="font-size:13px">${u.nombre||'—'}</span>
+      <span class="role-chip role-${u.rol}">${u.rol}</span>
+      <span style="font-size:12px;color:${u.activo?'var(--accent)':'var(--danger)'};font-family:var(--mono)">${u.activo?'SI':'NO'}</span>
       <button class="btn btn-warn btn-sm" onclick='abrirModalUsuario(${JSON.stringify(u)})'>✎</button>
       <button class="btn btn-danger btn-sm" onclick="confirmarEliminar('${u.usuario}')">✕</button>`;
     container.appendChild(row);
@@ -689,8 +656,8 @@ function renderUsersTable(users) {
 // ══════════════════════════════════════════════════════════════════
 function abrirModalUsuario(user) {
   document.getElementById('modal-titulo').textContent = user ? 'Editar usuario' : 'Nuevo usuario';
-  document.getElementById('m-usuario').value  = user ? user.usuario : '';
-  document.getElementById('m-usuario').disabled = !!user;  // no cambiar username en edición
+  document.getElementById('m-usuario').value   = user ? user.usuario : '';
+  document.getElementById('m-usuario').disabled = !!user;
   document.getElementById('m-pass').value    = '';
   document.getElementById('m-nombre').value  = user ? user.nombre  : '';
   document.getElementById('m-rol').value     = user ? user.rol     : 'editor';
@@ -733,23 +700,20 @@ async function guardarUsuarioModal() {
 }
 
 async function confirmarEliminar(usuario) {
-  if (!confirm(`¿Eliminar al usuario "${usuario}"? Esta acción no se puede deshacer.`)) return;
+  if (!confirm(`¿Eliminar al usuario "${usuario}"?`)) return;
   try {
     const data = await api('eliminarUsuario', { usuario });
     if (data.success) { toast('Usuario eliminado ✓', 'success'); cargarUsuarios(); }
     else toast('Error: ' + data.message, 'error');
-  } catch(e) {
-    toast('Error de conexión', 'error');
-  }
+  } catch(e) { toast('Error de conexión', 'error'); }
 }
 
-// Cerrar modal al hacer clic fuera
 document.getElementById('modal-usuario').addEventListener('click', function(e) {
   if (e.target === this) cerrarModal();
 });
 
 // ══════════════════════════════════════════════════════════════════
-//  RESPONSABLES (localStorage — rápido y local)
+//  RESPONSABLES
 // ══════════════════════════════════════════════════════════════════
 function getResponsables() {
   try { return JSON.parse(localStorage.getItem('bqef_responsables')) || []; } catch { return []; }
@@ -807,11 +771,10 @@ function guardarResponsables() {
 //  CONFIG
 // ══════════════════════════════════════════════════════════════════
 function cargarConfigUI() {
-  const cfg = getCfg();
   const su  = document.getElementById('cfg-script-url');
   const shu = document.getElementById('cfg-sheet-url');
-  if (su)  su.value  = cfg.scriptUrl;
-  if (shu) shu.value = cfg.sheetUrl;
+  if (su)  su.value  = getScriptUrl();
+  if (shu) shu.value = getSheetUrl();
 }
 
 function guardarConfig() {
