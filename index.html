@@ -14,23 +14,17 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;position:relative;overflow:hidden}
 .login-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,229,160,.15),transparent 70%);pointer-events:none}
 .login-logo{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
-.login-title{font-size:24px;font-weight:600;margin-bottom:32px;line-height:1.2}
-.login-title span{color:var(--accent)}
+.login-title{font-size:24px;font-weight:600;margin-bottom:32px;line-height:1.2}.login-title span{color:var(--accent)}
 label{display:block;font-size:11px;font-family:var(--mono);letter-spacing:.12em;color:var(--text2);text-transform:uppercase;margin-bottom:6px}
 input[type=text],input[type=password],input[type=number],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:15px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:20px}
 input:focus,select:focus{border-color:var(--accent)}
 input:disabled,select:disabled{opacity:.4;cursor:not-allowed}
 input.field-error{border-color:var(--danger)!important;background:rgba(255,71,87,.05)}
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.05em;transition:all .2s;text-transform:uppercase;font-weight:700}
-.btn-primary{background:var(--accent);color:#0a0e1a;width:100%}
-.btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}
-.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
-.btn-danger{background:rgba(255,71,87,.15);color:var(--danger);border:1px solid rgba(255,71,87,.3)}
-.btn-danger:hover{background:rgba(255,71,87,.25)}
-.btn-warn{background:rgba(255,165,2,.15);color:var(--warn);border:1px solid rgba(255,165,2,.3)}
-.btn-warn:hover{background:rgba(255,165,2,.25)}
+.btn-primary{background:var(--accent);color:#0a0e1a;width:100%}.btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(255,71,87,.15);color:var(--danger);border:1px solid rgba(255,71,87,.3)}.btn-danger:hover{background:rgba(255,71,87,.25)}
+.btn-warn{background:rgba(255,165,2,.15);color:var(--warn);border:1px solid rgba(255,165,2,.3)}.btn-warn:hover{background:rgba(255,165,2,.25)}
 .btn-sm{padding:7px 14px;font-size:11px}
 #app{display:none;position:relative;z-index:1;min-height:100vh}
 .topbar{position:sticky;top:0;z-index:50;background:rgba(10,14,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
@@ -38,63 +32,67 @@ input.field-error{border-color:var(--danger)!important;background:rgba(255,71,87
 .topbar-right{display:flex;align-items:center;gap:16px}
 .user-badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
 .role-chip{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.1em}
-.role-admin{background:rgba(0,229,160,.15);color:var(--accent)}
-.role-editor{background:rgba(0,150,255,.15);color:var(--accent2)}
-.role-lector{background:rgba(122,139,168,.15);color:var(--text2)}
-.main{max-width:920px;margin:0 auto;padding:32px 24px}
+.role-admin{background:rgba(0,229,160,.15);color:var(--accent)}.role-editor{background:rgba(0,150,255,.15);color:var(--accent2)}.role-lector{background:rgba(122,139,168,.15);color:var(--text2)}
+.main{max-width:960px;margin:0 auto;padding:32px 24px}
 .tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;margin-bottom:28px}
 .tab-btn{flex:1;background:none;border:none;border-radius:8px;color:var(--text2);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:10px;text-transform:uppercase;transition:all .2s}
-.tab-btn.active{background:var(--surface2);color:var(--accent);border:1px solid var(--border)}
-.tab-btn:hover:not(.active){color:var(--text)}
-.panel{display:none}
-.panel.active{display:block;animation:fadeUp .3s ease}
+.tab-btn.active{background:var(--surface2);color:var(--accent);border:1px solid var(--border)}.tab-btn:hover:not(.active){color:var(--text)}
+.panel{display:none}.panel.active{display:block;animation:fadeUp .3s ease}
 @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
 .card-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px}
 .card-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
 .scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px}
-.scan-input-wrap{position:relative}
-.scan-input-wrap input{font-family:var(--mono);font-size:18px;padding:14px 48px 14px 16px;margin-bottom:0}
+.scan-input-wrap{position:relative}.scan-input-wrap input{font-family:var(--mono);font-size:18px;padding:14px 48px 14px 16px;margin-bottom:0}
 .scan-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:20px}
-.product-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;min-height:52px;display:flex;align-items:center;transition:all .3s}
-.product-preview.found{border-color:var(--accent)}
-.product-preview.not-found{border-color:var(--danger)}
+.product-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;min-height:52px;display:flex;align-items:center;transition:all .3s}
+.product-preview.found{border-color:var(--accent)}.product-preview.not-found{border-color:var(--danger)}
 .product-name{font-weight:500;font-size:15px;flex:1}
 .product-status{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;padding:4px 10px;border-radius:20px}
-.status-found{background:rgba(0,229,160,.15);color:var(--accent)}
-.status-notfound{background:rgba(255,71,87,.15);color:var(--danger)}
+.status-found{background:rgba(0,229,160,.15);color:var(--accent)}.status-notfound{background:rgba(255,71,87,.15);color:var(--danger)}
+/* STOCK BOX */
+.stock-box{background:var(--surface2);border:1px solid var(--accent2);border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stock-label{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.stock-value{font-family:var(--mono);font-size:22px;color:var(--accent2);font-weight:700}
+/* TOGGLE STOCK */
+.stock-toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)}
+.stock-toggle-label{font-size:13px;color:var(--text2);flex:1}
+.toggle{position:relative;display:inline-block;width:40px;height:22px}.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.3s}
+.toggle-slider:before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:var(--text2);border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:var(--accent)}.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#0a0e1a}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-.form-group{display:flex;flex-direction:column}
-.form-group label{margin-bottom:6px}
-.form-group input,.form-group select{margin-bottom:0}
-.field-hint{font-size:11px;color:var(--danger);font-family:var(--mono);margin-top:4px;display:none}
-.field-hint.show{display:block}
+.form-group{display:flex;flex-direction:column}.form-group label{margin-bottom:6px}.form-group input,.form-group select{margin-bottom:0}
+.field-hint{font-size:11px;color:var(--danger);font-family:var(--mono);margin-top:4px;display:none}.field-hint.show{display:block}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
 td{padding:11px 12px;border-bottom:1px solid rgba(42,53,72,.5);vertical-align:middle}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.02)}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)}
 .code-cell{font-family:var(--mono);font-size:12px;color:var(--accent2)}
 .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
 .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
 .stat-num{font-family:var(--mono);font-size:32px;color:var(--accent);display:block;line-height:1;margin-bottom:6px}
 .stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
-.config-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}
-.config-item:last-child{border-bottom:none}
-.config-label{font-weight:500;font-size:14px}
-.config-desc{font-size:12px;color:var(--text2);margin-top:2px}
+/* REPORTE DIFERENCIAS */
+.dif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.dif-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.dif-card.highlight{border-color:var(--accent)}
+.dif-card.danger{border-color:var(--danger)}
+.dif-card.warn{border-color:var(--warn)}
+.dif-card.info{border-color:var(--accent2)}
+.dif-label{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.dif-value{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text)}
+.dif-card.highlight .dif-value{color:var(--accent)}
+.dif-card.danger .dif-value{color:var(--danger)}
+.dif-card.warn .dif-value{color:var(--warn)}
+.dif-card.info .dif-value{color:var(--accent2)}
+.config-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}.config-item:last-child{border-bottom:none}
+.config-label{font-weight:500;font-size:14px}.config-desc{font-size:12px;color:var(--text2);margin-top:2px}
 .config-input{width:300px;margin-bottom:0;font-size:13px}
-.user-table-row{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(42,53,72,.4)}
-.user-table-row:last-child{border-bottom:none}
+.user-table-row{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(42,53,72,.4)}.user-table-row:last-child{border-bottom:none}
 .user-table-header{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
 .user-table-header span{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
-.toggle{position:relative;display:inline-block;width:40px;height:22px}
-.toggle input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.3s}
-.toggle-slider:before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:var(--text2);border-radius:50%;transition:.3s}
-.toggle input:checked+.toggle-slider{background:var(--accent)}
-.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#0a0e1a}
 #series-panel{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
 #series-panel.open{display:block}
 .series-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
@@ -105,33 +103,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
 .serie-scan-row input{font-family:var(--mono);font-size:16px;margin-bottom:0}
 .series-log{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
 .serie-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
-.serie-item.ok{border-color:var(--accent)}
-.serie-item.forced{border-color:var(--warn)}
-.serie-item.error-item{border-color:var(--danger)}
+.serie-item.ok{border-color:var(--accent)}.serie-item.forced{border-color:var(--warn)}.serie-item.error-item{border-color:var(--danger)}.serie-item.duplicate{border-color:var(--warn);background:rgba(255,165,2,.05)}
 .serie-num{font-family:var(--mono);font-size:14px}
 .serie-status{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
-.serie-ok{background:rgba(0,229,160,.15);color:var(--accent)}
-.serie-forced{background:rgba(255,165,2,.15);color:var(--warn)}
-.serie-error{background:rgba(255,71,87,.15);color:var(--danger)}
+.serie-ok{background:rgba(0,229,160,.15);color:var(--accent)}.serie-forced{background:rgba(255,165,2,.15);color:var(--warn)}.serie-error{background:rgba(255,71,87,.15);color:var(--danger)}.serie-dup{background:rgba(255,165,2,.15);color:var(--warn)}
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
 .modal-overlay.open{opacity:1;pointer-events:auto}
 .modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:420px;max-width:90vw}
-.modal-icon{font-size:32px;margin-bottom:12px;display:block}
-.modal-title{font-size:18px;font-weight:600;margin-bottom:8px}
+.modal-icon{font-size:32px;margin-bottom:12px;display:block}.modal-title{font-size:18px;font-weight:600;margin-bottom:8px}
 .modal-desc{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
-.modal-actions{display:flex;gap:10px}
-.modal-actions .btn{width:auto;flex:1}
+.modal-actions{display:flex;gap:10px}.modal-actions .btn{width:auto;flex:1}
 #status-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:12px 24px;font-size:13px;font-family:var(--mono);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;z-index:500;white-space:nowrap}
 #status-bar.show{opacity:1;pointer-events:auto}
-#status-bar.success{border-color:var(--accent);color:var(--accent)}
-#status-bar.error{border-color:var(--danger);color:var(--danger)}
-#status-bar.loading{border-color:var(--accent2);color:var(--accent2)}
+#status-bar.success{border-color:var(--accent);color:var(--accent)}#status-bar.error{border-color:var(--danger);color:var(--danger)}#status-bar.loading{border-color:var(--accent2);color:var(--accent2)}
 .spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
 @keyframes spin{to{transform:rotate(360deg)}}
 .divider{height:1px;background:var(--border);margin:20px 0}
 .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;font-family:var(--mono);letter-spacing:.1em}
-.bodega-chip{display:inline-flex;align-items:center;gap:6px;background:rgba(0,150,255,.1);border:1px solid rgba(0,150,255,.3);border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:11px;color:var(--accent2);margin-bottom:20px}
-@media(max-width:600px){.form-grid{grid-template-columns:1fr}.stats-row{grid-template-columns:1fr}.login-card{width:100%;margin:16px;padding:32px 24px}.config-input{width:100%}.config-item{flex-direction:column;align-items:flex-start;gap:10px}.user-table-row,.user-table-header{grid-template-columns:1fr 1fr}.serie-scan-row{grid-template-columns:1fr}}
+@media(max-width:600px){.form-grid,.dif-grid,.stats-row{grid-template-columns:1fr}.login-card{width:100%;margin:16px;padding:32px 24px}.config-input{width:100%}.config-item{flex-direction:column;align-items:flex-start;gap:10px}.user-table-row,.user-table-header{grid-template-columns:1fr 1fr}.serie-scan-row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -140,10 +129,8 @@ tr:hover td{background:rgba(255,255,255,.02)}
   <div class="login-card">
     <p class="login-logo">◈ BQEF System</p>
     <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
-    <label>Usuario</label>
-    <input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
-    <label>Contraseña</label>
-    <input type="password" id="l-pass" placeholder="••••••••">
+    <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
+    <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
     <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
   </div>
@@ -165,12 +152,24 @@ tr:hover td{background:rgba(255,255,255,.02)}
     <div class="tabs">
       <button class="tab-btn active" data-tab="ingresar" onclick="switchTab(this)">▪ Registrar</button>
       <button class="tab-btn" data-tab="resumen" onclick="switchTab(this)">▪ Resumen</button>
+      <button class="tab-btn" data-tab="reporte" onclick="switchTab(this)">▪ Reporte</button>
       <button class="tab-btn admin-only" data-tab="usuarios" onclick="switchTab(this)" style="display:none">▪ Usuarios</button>
       <button class="tab-btn admin-only" data-tab="config" onclick="switchTab(this)" style="display:none">▪ Config.</button>
     </div>
 
     <!-- REGISTRAR -->
     <div class="panel active" id="tab-ingresar">
+      <!-- Toggle stock (solo admin) -->
+      <div id="stock-toggle-wrap" style="display:none" class="card" style="padding:14px">
+        <div class="stock-toggle-row">
+          <span class="stock-toggle-label">📦 Mostrar stock total al escanear</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-stock" onchange="toggleStock(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-title">Escanear / Ingresar Código NAF</div>
         <div class="scan-row">
@@ -180,9 +179,21 @@ tr:hover td{background:rgba(255,255,255,.02)}
           </div>
           <button class="btn btn-secondary" onclick="buscarProducto()">Buscar</button>
         </div>
+
+        <!-- Verificación producto -->
         <div class="product-preview" id="product-preview">
           <span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>
         </div>
+
+        <!-- Stock box (visible solo si toggle activo) -->
+        <div class="stock-box" id="stock-box" style="display:none">
+          <div>
+            <div class="stock-label">Stock total en sistema</div>
+            <div class="stock-value" id="stock-value">—</div>
+          </div>
+          <span style="font-size:28px">📦</span>
+        </div>
+
         <div class="form-grid">
           <div class="form-group">
             <label>Conteo <span style="color:var(--danger)">*</span></label>
@@ -215,7 +226,7 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <div class="card-title">Registros de esta sesión</div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Código</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Series</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Usuario</th><th>Series</th><th>Estado</th></tr></thead>
             <tbody id="session-log"></tbody>
           </table>
           <div class="empty" id="session-empty">Sin registros aún</div>
@@ -238,10 +249,80 @@ tr:hover td{background:rgba(255,255,255,.02)}
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Código NAF</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Fecha</th></tr></thead>
+            <thead><tr><th>Código NAF</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Usuario</th><th>Fecha</th></tr></thead>
             <tbody id="resumen-body"></tbody>
           </table>
           <div class="empty" id="resumen-empty" style="display:none">Sin datos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTE DIFERENCIAS -->
+    <div class="panel" id="tab-reporte">
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:3px;height:14px;background:var(--accent);border-radius:2px;display:block"></span>Reporte de diferencias</span>
+          <button class="btn btn-secondary btn-sm" onclick="cargarReporte()">↻ Actualizar</button>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)">Datos en tiempo real desde la hoja DETALLE DIFERENCIAS</p>
+
+        <!-- Fila 1: Avance general -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Avance del inventario</div>
+        <div class="dif-grid" style="margin-bottom:24px">
+          <div class="dif-card highlight">
+            <div class="dif-label">Total ítems existentes</div>
+            <div class="dif-value" id="d-totalExistencia">—</div>
+          </div>
+          <div class="dif-card highlight">
+            <div class="dif-label">Total ítems contados</div>
+            <div class="dif-value" id="d-totalConteo">—</div>
+          </div>
+          <div class="dif-card info">
+            <div class="dif-label">% Avance</div>
+            <div class="dif-value" id="d-avance">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">No contados</div>
+            <div class="dif-value" id="d-noContados">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Ítems por revisar</div>
+            <div class="dif-value" id="d-porRevisar">—</div>
+          </div>
+        </div>
+
+        <!-- Fila 2: Valores -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Valorización</div>
+        <div class="dif-grid" style="margin-bottom:24px">
+          <div class="dif-card info">
+            <div class="dif-label">Valor total inventario</div>
+            <div class="dif-value" id="d-valorInventario">—</div>
+          </div>
+          <div class="dif-card info">
+            <div class="dif-label">Valor total conteo</div>
+            <div class="dif-value" id="d-valorConteo">—</div>
+          </div>
+        </div>
+
+        <!-- Fila 3: Diferencias -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Diferencias</div>
+        <div class="dif-grid">
+          <div class="dif-card danger">
+            <div class="dif-label">Ítems faltantes</div>
+            <div class="dif-value" id="d-itemsFaltantes">—</div>
+          </div>
+          <div class="dif-card danger">
+            <div class="dif-label">Valor faltantes</div>
+            <div class="dif-value" id="d-valorFaltantes">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Ítems sobrantes</div>
+            <div class="dif-value" id="d-itemsSobrantes">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Valor sobrantes</div>
+            <div class="dif-value" id="d-valorSobrantes">—</div>
+          </div>
         </div>
       </div>
     </div>
@@ -254,14 +335,11 @@ tr:hover td{background:rgba(255,255,255,.02)}
           <p style="font-size:13px;color:var(--text2)">Guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
           <button class="btn btn-secondary btn-sm" onclick="cargarUsuarios()">↻ Actualizar</button>
         </div>
-        <div class="user-table-header">
-          <span>Usuario</span><span>Nombre</span><span>Rol</span><span>Activo</span><span>Edit</span><span>Borrar</span>
-        </div>
+        <div class="user-table-header"><span>Usuario</span><span>Nombre</span><span>Rol</span><span>Activo</span><span>Edit</span><span>Borrar</span></div>
         <div id="users-table-body"></div>
         <div class="divider"></div>
         <button class="btn btn-secondary" onclick="abrirModalUsuario(null)">+ Nuevo usuario</button>
       </div>
-
       <div class="card">
         <div class="card-title">Responsables del mes</div>
         <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Guardados en pestaña <b style="color:var(--accent)">RESPONSABLES</b> — visibles en todos los dispositivos.</p>
@@ -305,21 +383,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
   </div>
   <div class="series-main">
     <div class="series-badge">
-      <div>
-        <div class="series-badge-code" id="sp-codigo">—</div>
-        <div style="font-size:13px;color:var(--text2)" id="sp-desc">—</div>
-      </div>
+      <div><div class="series-badge-code" id="sp-codigo">—</div><div style="font-size:13px;color:var(--text2)" id="sp-desc">—</div></div>
       <div style="text-align:right">
         <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em">Bodega</div>
         <div style="font-family:var(--mono);font-size:13px;color:var(--accent2)" id="sp-bodega">—</div>
       </div>
     </div>
-
     <div class="card" style="margin-bottom:20px">
       <div class="card-title">Series esperadas en bodega</div>
       <div id="sp-esperadas-list"><div class="empty">Cargando…</div></div>
     </div>
-
     <div class="card">
       <div class="card-title">Ingresar serie</div>
       <div class="serie-scan-row">
@@ -327,18 +400,16 @@ tr:hover td{background:rgba(255,255,255,.02)}
         <button class="btn btn-secondary" onclick="agregarSerie()">Agregar</button>
       </div>
     </div>
-
     <div class="card">
-      <div class="card-title">Series ingresadas</div>
+      <div class="card-title">Series ingresadas en esta sesión</div>
       <div class="series-log" id="series-log"></div>
       <div class="empty" id="series-empty">Sin series ingresadas aún</div>
     </div>
-
     <button class="btn btn-primary" onclick="finalizarSeries()" style="margin-bottom:40px">✓ Finalizar y guardar conteo</button>
   </div>
 </div>
 
-<!-- MODAL SERIE -->
+<!-- MODAL SERIE NO COINCIDE -->
 <div class="modal-overlay" id="modal-serie">
   <div class="modal">
     <span class="modal-icon">⚠️</span>
@@ -386,49 +457,46 @@ tr:hover td{background:rgba(255,255,255,.02)}
 <div id="status-bar"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaWRxBtvyWRZT4sQn_VVG8wCWutyCYKmZ_2wIZqK8hS8IbjWVbESs5yhOk3JDI3VmR/exec';
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1WS_FDBP0XJQTG4mRWQX0pMJXRaQLwwxUwcucR9oX-mUDmdSghinLLVvFf2uo4drD/exec';
 const SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1cB7KaTUG-CnGM6dxkQCa74rIcmuLqsnyHG4DesaO4tE/';
 
 function getScriptUrl(){ return localStorage.getItem('cfg_scriptUrl') || SCRIPT_URL; }
 function getSheetUrl() { return localStorage.getItem('cfg_sheetUrl')  || SHEET_URL; }
 
-var state = { currentUser:null, productCache:{}, resumenData:[], bodega:'', formActual:{}, seriesIngresadas:[] };
+var state = {
+  currentUser: null, productCache: {}, resumenData: [],
+  bodega: '', mostrarStock: false,
+  formActual: {}, seriesIngresadas: [], seriesEstaSession: []
+};
 
 async function api(action, payload){
   payload = payload || {};
-  var url = getScriptUrl();
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
-  var res = await fetch(url + '?' + params.toString(), { method:'GET', redirect:'follow' });
+  var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
   return res.json();
 }
 
-// LOGIN
+// ── LOGIN ──
 async function doLogin(){
   var usuario = document.getElementById('l-user').value.trim();
   var pass    = document.getElementById('l-pass').value;
   var errEl   = document.getElementById('login-error');
   var btn     = document.getElementById('btn-login');
   if (!usuario || !pass){ showLoginError('Ingresa usuario y contraseña'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Verificando…';
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verificando…';
   errEl.style.display = 'none';
   try {
-    var data = await api('login', { usuario:usuario, pass:pass });
+    var data = await api('login', { usuario: usuario, pass: pass });
     if (data.success){
       state.currentUser = data;
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       applyRole(data.rol, data.nombre || data.usuario);
       initApp();
-    } else {
-      showLoginError(data.message || 'Credenciales incorrectas');
-    }
-  } catch(e){
-    showLoginError('Sin conexión al servidor. Verifica la URL del script en Config.');
-  }
-  btn.disabled = false;
-  btn.innerHTML = '<span>Ingresar</span><span>→</span>';
+    } else { showLoginError(data.message || 'Credenciales incorrectas'); }
+  } catch(e){ showLoginError('Sin conexión al servidor. Verifica la URL del script en Config.'); }
+  btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
 }
 function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
 document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
@@ -443,34 +511,46 @@ function doLogout(){
 function applyRole(role, nombre){
   document.getElementById('ui-nombre').textContent = nombre;
   var chip = document.getElementById('ui-role-chip');
-  chip.className = 'role-chip role-' + role;
-  chip.textContent = role;
+  chip.className = 'role-chip role-' + role; chip.textContent = role;
   document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = role==='admin' ? '' : 'none'; });
-  if(role==='lector'){
+  // Toggle stock solo admin
+  document.getElementById('stock-toggle-wrap').style.display = role==='admin' ? 'block' : 'none';
+  if (role==='lector'){
     document.getElementById('btn-guardar').disabled=true;
     document.getElementById('btn-guardar').style.opacity='.4';
     ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=true; });
   }
 }
 
-// INIT
+// ── INIT ──
 async function initApp(){
   cargarResponsablesUI();
   cargarConfigUI();
-  // Cargar bodega desde sheet
   try {
     var data = await api('getBodega');
     state.bodega = data.bodega || '';
     if(state.bodega){
       var el = document.getElementById('bodega-topbar');
-      el.textContent = '📦 ' + state.bodega;
-      el.style.display = 'inline-flex';
+      el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
     }
   } catch(e){ state.bodega = ''; }
   setTimeout(function(){ document.getElementById('codigo-input').focus(); }, 200);
 }
 
-// TABS
+// ── TOGGLE STOCK ──
+function toggleStock(activo){
+  state.mostrarStock = activo;
+  // Si hay producto activo, mostrar/ocultar stock
+  var box = document.getElementById('stock-box');
+  if (!activo){ box.style.display='none'; return; }
+  var codigo = document.getElementById('codigo-input').value.trim();
+  if (codigo && state.productCache[codigo]) {
+    document.getElementById('stock-value').textContent = state.productCache[codigo].stock !== undefined ? state.productCache[codigo].stock : '—';
+    box.style.display = 'flex';
+  }
+}
+
+// ── TABS ──
 function switchTab(btn){
   document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
   document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
@@ -479,17 +559,12 @@ function switchTab(btn){
   if(panel) panel.classList.add('active');
   if(btn.dataset.tab==='resumen') cargarResumen();
   if(btn.dataset.tab==='usuarios') cargarUsuarios();
+  if(btn.dataset.tab==='reporte') cargarReporte();
 }
 
-// VALIDACIÓN
-function limpiarError(inputId, hintId){
-  document.getElementById(inputId).classList.remove('field-error');
-  document.getElementById(hintId).classList.remove('show');
-}
-function marcarError(inputId, hintId){
-  document.getElementById(inputId).classList.add('field-error');
-  document.getElementById(hintId).classList.add('show');
-}
+// ── VALIDACIÓN ──
+function limpiarError(inputId, hintId){ document.getElementById(inputId).classList.remove('field-error'); document.getElementById(hintId).classList.remove('show'); }
+function marcarError(inputId, hintId){ document.getElementById(inputId).classList.add('field-error'); document.getElementById(hintId).classList.add('show'); }
 function validarFormulario(){
   var codigo = document.getElementById('codigo-input').value.trim();
   if(!codigo){ toast('Ingresa y verifica un código NAF', 'error'); return false; }
@@ -502,25 +577,30 @@ function validarFormulario(){
   return ok;
 }
 
-// BUSCAR PRODUCTO
+// ── BUSCAR PRODUCTO ──
 var debounceTimer;
 function onCodigoInput(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(buscarProducto, 700); }
 async function buscarProducto(){
   var codigo = document.getElementById('codigo-input').value.trim();
   var preview = document.getElementById('product-preview');
+  var stockBox = document.getElementById('stock-box');
+  stockBox.style.display = 'none';
   if(!codigo){
     preview.className='product-preview';
     preview.innerHTML='<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>';
     return;
   }
-  if(state.productCache[codigo]){ mostrarProducto(codigo, state.productCache[codigo]); return; }
+  if(state.productCache[codigo]){
+    mostrarProducto(codigo, state.productCache[codigo].descripcion, state.productCache[codigo].stock);
+    return;
+  }
   preview.className='product-preview';
   preview.innerHTML='<span class="spinner"></span><span style="margin-left:10px;font-size:13px;color:var(--text2)">Verificando…</span>';
   try {
-    var data = await api('buscarProducto', { codigo:codigo });
+    var data = await api('buscarProducto', { codigo: codigo });
     if(data.found){
-      state.productCache[codigo] = data.descripcion;
-      mostrarProducto(codigo, data.descripcion);
+      state.productCache[codigo] = { descripcion: data.descripcion, stock: data.stock };
+      mostrarProducto(codigo, data.descripcion, data.stock);
     } else {
       preview.className='product-preview not-found';
       preview.innerHTML='<span class="product-name" style="color:var(--danger)">⚠ Código <b>'+codigo+'</b> no encontrado en INV VALORIZADO</span><span class="product-status status-notfound">No en bodega</span>';
@@ -530,31 +610,35 @@ async function buscarProducto(){
     preview.innerHTML='<span style="color:var(--danger);font-size:13px">Error de conexión.</span>';
   }
 }
-function mostrarProducto(codigo, desc){
+function mostrarProducto(codigo, desc, stock){
   var p = document.getElementById('product-preview');
   p.className='product-preview found';
   p.innerHTML='<span class="product-name">'+desc+'</span><span class="product-status status-found">✓ Encontrado</span>';
+  // Mostrar stock si toggle activo
+  if(state.mostrarStock){
+    document.getElementById('stock-value').textContent = stock !== undefined && stock !== '' ? stock : '—';
+    document.getElementById('stock-box').style.display = 'flex';
+  }
 }
 
-// INICIAR GUARDADO
+// ── GUARDAR ──
 function iniciarGuardado(){
   if(!validarFormulario()) return;
   var codigo = document.getElementById('codigo-input').value.trim();
   state.formActual = {
     codigo: codigo,
-    descripcion: state.productCache[codigo] || '—',
+    descripcion: state.productCache[codigo] ? state.productCache[codigo].descripcion : '—',
     conteo: document.getElementById('f-conteo').value.trim(),
     ubicacion: document.getElementById('f-ubicacion').value.trim(),
     responsable: document.getElementById('f-responsable').value,
   };
+  state.seriesIngresadas = [];
   document.getElementById('modal-tiene-serie').classList.add('open');
 }
 function responderTieneSerie(tiene){
   document.getElementById('modal-tiene-serie').classList.remove('open');
   if(tiene){ abrirPanelSeries(); } else { guardarConteo(); }
 }
-
-// GUARDAR CONTEO
 async function guardarConteo(){
   var f = state.formActual;
   var btn = document.getElementById('btn-guardar');
@@ -563,7 +647,7 @@ async function guardarConteo(){
     var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario });
     if(data.success){
       toast('Registro guardado ✓', 'success');
-      addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, series:state.seriesIngresadas.length, ok:true });
+      addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true });
       limpiarFormulario();
     } else { throw new Error(data.message || 'Error al guardar'); }
   } catch(e){ toast('Error: '+e.message, 'error'); }
@@ -574,25 +658,27 @@ function limpiarFormulario(){
   document.getElementById('f-responsable').value='';
   document.getElementById('product-preview').className='product-preview';
   document.getElementById('product-preview').innerHTML='<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>';
+  document.getElementById('stock-box').style.display='none';
   ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('field-error'); });
   ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
   state.seriesIngresadas=[]; state.formActual={};
   document.getElementById('codigo-input').focus();
 }
 
-// SESSION LOG
+// ── SESSION LOG ──
 function addSessionLog(row){
-  var tbody = document.getElementById('session-log');
+  var tbody=document.getElementById('session-log');
   document.getElementById('session-empty').style.display='none';
-  var tr = document.createElement('tr');
-  tr.innerHTML='<td class="code-cell">'+row.codigo+'</td><td>'+row.descripcion+'</td><td><b>'+row.conteo+'</b></td><td>'+(row.ubicacion||'—')+'</td><td>'+row.responsable+'</td><td style="font-family:var(--mono);font-size:11px">'+(row.series>0?row.series+' serie(s)':'—')+'</td><td><span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:'+(row.ok?'rgba(0,229,160,.15)':'rgba(255,71,87,.15)')+';color:'+(row.ok?'var(--accent)':'var(--danger)')+'">'+( row.ok?'OK':'ERROR')+'</span></td>';
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td class="code-cell">'+row.codigo+'</td><td>'+row.descripcion+'</td><td><b>'+row.conteo+'</b></td><td>'+(row.ubicacion||'—')+'</td><td>'+row.responsable+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">'+(row.usuario||'—')+'</td><td style="font-family:var(--mono);font-size:11px">'+(row.series>0?row.series+' serie(s)':'—')+'</td><td><span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:'+(row.ok?'rgba(0,229,160,.15)':'rgba(255,71,87,.15)')+';color:'+(row.ok?'var(--accent)':'var(--danger)')+'">'+( row.ok?'OK':'ERROR')+'</span></td>';
   tbody.insertBefore(tr, tbody.firstChild);
 }
 
-// PANEL SERIES
+// ── PANEL SERIES ──
 async function abrirPanelSeries(){
   var f = state.formActual;
-  state.seriesIngresadas=[];
+  state.seriesIngresadas = [];
+  state.seriesEstaSession = []; // resetear duplicados
   document.getElementById('sp-codigo').textContent = f.codigo;
   document.getElementById('sp-desc').textContent = f.descripcion;
   document.getElementById('sp-bodega').textContent = state.bodega || '(no configurada)';
@@ -604,7 +690,7 @@ async function abrirPanelSeries(){
   cargarSeriesEsperadas(f.codigo, state.bodega);
 }
 async function cargarSeriesEsperadas(codigo, bodega){
-  var container = document.getElementById('sp-esperadas-list');
+  var container=document.getElementById('sp-esperadas-list');
   container.innerHTML='<div class="empty">Cargando…</div>';
   try {
     var data = await api('getSeriesPorCodigo', { codigo:codigo, bodega:bodega });
@@ -612,7 +698,7 @@ async function cargarSeriesEsperadas(codigo, bodega){
     if(!series.length){ container.innerHTML='<div class="empty">No hay series registradas para este código/bodega</div>'; return; }
     container.innerHTML='';
     series.forEach(function(s){
-      var div = document.createElement('div');
+      var div=document.createElement('div');
       div.className='serie-item'+(s.registrada?' ok':'');
       div.innerHTML='<span class="serie-num">'+(s.serie||'—')+'</span><span class="serie-status '+(s.registrada?'serie-ok':'')+'" style="'+(s.registrada?'':'background:rgba(122,139,168,.15);color:var(--text2)')+'">'+(s.registrada?'✓ Ya registrada':'Pendiente')+'</span>';
       container.appendChild(div);
@@ -622,29 +708,41 @@ async function cargarSeriesEsperadas(codigo, bodega){
 
 var resolverModal = null;
 async function agregarSerie(){
-  var input = document.getElementById('serie-input');
-  var numSerie = input.value.trim();
+  var input=document.getElementById('serie-input');
+  var numSerie=input.value.trim();
   if(!numSerie){ input.focus(); return; }
-  var codigo = state.formActual.codigo;
-  var bodega = state.bodega;
+
+  // ── VALIDAR DUPLICADO EN SESIÓN ──
+  var serieUpper = numSerie.toUpperCase();
+  var duplicado = state.seriesEstaSession.some(function(s){ return s.toUpperCase() === serieUpper; });
+  if(duplicado){
+    agregarSerieLog(numSerie, 'duplicate', '⚠ Serie duplicada en esta sesión');
+    toast('Esta serie ya fue ingresada en esta sesión', 'error');
+    input.value=''; input.focus();
+    return;
+  }
+
+  var codigo=state.formActual.codigo;
+  var bodega=state.bodega;
   input.disabled=true;
   try {
     var data = await api('validarSerie', { codigo:codigo, serie:numSerie, bodega:bodega });
     if(data.encontrada && data.ok){
       await guardarSerieFisica(numSerie, false);
+      state.seriesEstaSession.push(numSerie);
       agregarSerieLog(numSerie, 'ok', '✓ Serie válida');
     } else if(data.encontrada && !data.codigoOk){
-      var forzar = await mostrarModalSerie('⚠️ Código no coincide', 'La serie <b>'+numSerie+'</b> está registrada bajo el código <b>'+data.codigoHoja+'</b>, no bajo <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(forzar){ await guardarSerieFisica(numSerie, true); agregarSerieLog(numSerie, 'forced', 'Guardada (código no coincide)'); }
-      else { agregarSerieLog(numSerie, 'error-item', 'No guardada'); }
+      var f1 = await mostrarModalSerie('⚠️ Código no coincide','La serie <b>'+numSerie+'</b> está registrada bajo el código <b>'+data.codigoHoja+'</b>, no bajo <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f1){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (código no coincide)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
     } else if(data.encontrada && !data.bodegaOk){
-      var forzar2 = await mostrarModalSerie('⚠️ Bodega no coincide', 'La serie <b>'+numSerie+'</b> pertenece a la bodega <b>'+data.bodegaHoja+'</b>, no a <b>'+bodega+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(forzar2){ await guardarSerieFisica(numSerie, true); agregarSerieLog(numSerie, 'forced', 'Guardada (bodega no coincide)'); }
-      else { agregarSerieLog(numSerie, 'error-item', 'No guardada'); }
+      var f2 = await mostrarModalSerie('⚠️ Bodega no coincide','La serie <b>'+numSerie+'</b> pertenece a la bodega <b>'+data.bodegaHoja+'</b>, no a <b>'+bodega+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f2){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (bodega no coincide)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
     } else {
-      var forzar3 = await mostrarModalSerie('⚠️ Serie no encontrada', 'La serie <b>'+numSerie+'</b> no está registrada en la hoja SERIES para el código <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(forzar3){ await guardarSerieFisica(numSerie, true); agregarSerieLog(numSerie, 'forced', 'Guardada (no estaba en hoja)'); }
-      else { agregarSerieLog(numSerie, 'error-item', 'No guardada'); }
+      var f3 = await mostrarModalSerie('⚠️ Serie no encontrada','La serie <b>'+numSerie+'</b> no está en la hoja SERIES para el código <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f3){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (no estaba en hoja)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
     }
   } catch(e){ toast('Error al validar serie: '+e.message, 'error'); }
   input.disabled=false; input.value=''; input.focus();
@@ -656,45 +754,42 @@ async function guardarSerieFisica(numSerie, forzar){
 }
 function agregarSerieLog(serie, tipo, label){
   document.getElementById('series-empty').style.display='none';
-  var log = document.getElementById('series-log');
-  var div = document.createElement('div');
+  var log=document.getElementById('series-log');
+  var div=document.createElement('div');
   div.className='serie-item '+tipo;
-  var colorMap = { ok:'serie-ok', forced:'serie-forced', 'error-item':'serie-error' };
+  var colorMap={'ok':'serie-ok','forced':'serie-forced','error-item':'serie-error','duplicate':'serie-dup'};
   div.innerHTML='<span class="serie-num">'+serie+'</span><span class="serie-status '+(colorMap[tipo]||'')+'">'+label+'</span>';
   log.insertBefore(div, log.firstChild);
 }
 function mostrarModalSerie(titulo, desc){
   return new Promise(function(resolve){
-    document.getElementById('modal-serie-title').textContent = titulo;
-    document.getElementById('modal-serie-desc').innerHTML = desc;
+    document.getElementById('modal-serie-title').textContent=titulo;
+    document.getElementById('modal-serie-desc').innerHTML=desc;
     document.getElementById('modal-serie').classList.add('open');
-    resolverModal = resolve;
+    resolverModal=resolve;
   });
 }
-function responderModal(forzar){
-  document.getElementById('modal-serie').classList.remove('open');
-  if(resolverModal){ resolverModal(forzar); resolverModal=null; }
-}
+function responderModal(forzar){ document.getElementById('modal-serie').classList.remove('open'); if(resolverModal){ resolverModal(forzar); resolverModal=null; } }
 async function finalizarSeries(){
   document.getElementById('series-panel').classList.remove('open');
-  var n = state.seriesIngresadas.length;
+  var n=state.seriesIngresadas.length;
   document.getElementById('f-series-display').value = n>0 ? n+' serie(s) ingresada(s)' : '';
   await guardarConteo();
 }
 
-// RESUMEN
+// ── RESUMEN ──
 async function cargarResumen(){
   var tbody=document.getElementById('resumen-body'), empty=document.getElementById('resumen-empty');
-  tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:24px"><span class="spinner"></span></td></tr>';
+  tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px"><span class="spinner"></span></td></tr>';
   empty.style.display='none';
   try {
-    var data = await api('getResumen');
-    state.resumenData = data.rows || [];
+    var data=await api('getResumen');
+    state.resumenData=data.rows||[];
     renderResumen(state.resumenData);
-    document.getElementById('stat-total').textContent = state.resumenData.length;
-    var hoy = new Date().toLocaleDateString('es-EC');
-    document.getElementById('stat-hoy').textContent = state.resumenData.filter(function(r){ return r.fecha===hoy; }).length;
-    document.getElementById('stat-resp').textContent = new Set(state.resumenData.map(function(r){ return r.responsable; })).size;
+    document.getElementById('stat-total').textContent=state.resumenData.length;
+    var hoy=new Date().toLocaleDateString('es-EC');
+    document.getElementById('stat-hoy').textContent=state.resumenData.filter(function(r){ return r.fecha===hoy; }).length;
+    document.getElementById('stat-resp').textContent=new Set(state.resumenData.map(function(r){ return r.responsable; })).size;
   } catch(e){ tbody.innerHTML=''; empty.textContent='Error al cargar datos.'; empty.style.display='block'; }
 }
 function renderResumen(rows){
@@ -704,7 +799,7 @@ function renderResumen(rows){
   empty.style.display='none';
   rows.forEach(function(r){
     var tr=document.createElement('tr');
-    tr.innerHTML='<td class="code-cell">'+(r.codigo||'—')+'</td><td>'+(r.descripcion||'—')+'</td><td><b>'+(r.conteo||'—')+'</b></td><td>'+(r.ubicacion||'—')+'</td><td>'+(r.responsable||'—')+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--text2)">'+(r.fecha||'—')+'</td>';
+    tr.innerHTML='<td class="code-cell">'+(r.codigo||'—')+'</td><td>'+(r.descripcion||'—')+'</td><td><b>'+(r.conteo||'—')+'</b></td><td>'+(r.ubicacion||'—')+'</td><td>'+(r.responsable||'—')+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">'+(r.usuario||'—')+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--text2)">'+(r.fecha||'—')+'</td>';
     tbody.appendChild(tr);
   });
 }
@@ -713,12 +808,36 @@ function filtrarTabla(){
   renderResumen(state.resumenData.filter(function(r){ return (r.codigo||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q); }));
 }
 
-// RESPONSABLES
+// ── REPORTE DIFERENCIAS ──
+async function cargarReporte(){
+  var ids=['d-totalExistencia','d-totalConteo','d-avance','d-noContados','d-porRevisar','d-valorInventario','d-valorConteo','d-itemsFaltantes','d-valorFaltantes','d-itemsSobrantes','d-valorSobrantes'];
+  ids.forEach(function(id){ document.getElementById(id).innerHTML='<span class="spinner" style="width:12px;height:12px"></span>'; });
+  try {
+    var data=await api('getDiferencias');
+    if(data.error){ ids.forEach(function(id){ document.getElementById(id).textContent='Error'; }); toast('Error: '+data.error,'error'); return; }
+    document.getElementById('d-totalExistencia').textContent = data.totalExistenciaItems || '—';
+    document.getElementById('d-totalConteo').textContent     = data.totalConteoItems     || '—';
+    document.getElementById('d-avance').textContent          = data.porcentajeAvance     || '—';
+    document.getElementById('d-noContados').textContent      = data.noContados           || '—';
+    document.getElementById('d-porRevisar').textContent      = data.itemsPorRevisar      || '—';
+    document.getElementById('d-valorInventario').textContent = data.valorTotalInventario  || '—';
+    document.getElementById('d-valorConteo').textContent     = data.valorTotalConteo      || '—';
+    document.getElementById('d-itemsFaltantes').textContent  = data.itemsFaltantes        || '—';
+    document.getElementById('d-valorFaltantes').textContent  = data.valorFaltantes        || '—';
+    document.getElementById('d-itemsSobrantes').textContent  = data.itemsSobrantes        || '—';
+    document.getElementById('d-valorSobrantes').textContent  = data.valorSobrantes        || '—';
+  } catch(e){
+    ids.forEach(function(id){ document.getElementById(id).textContent='—'; });
+    toast('Error al cargar reporte: '+e.message,'error');
+  }
+}
+
+// ── RESPONSABLES ──
 async function cargarResponsablesUI(){
   try {
-    var data = await api('getResponsables');
-    var resp = data.responsables || [];
-    var select = document.getElementById('f-responsable');
+    var data=await api('getResponsables');
+    var resp=data.responsables||[];
+    var select=document.getElementById('f-responsable');
     select.innerHTML='<option value="">— Seleccionar —</option>';
     resp.forEach(function(r){ var opt=document.createElement('option'); opt.value=r; opt.textContent=r; select.appendChild(opt); });
     renderResponsablesAdmin(resp);
@@ -732,7 +851,7 @@ function renderResponsablesAdmin(list){
   list.forEach(function(r){
     var div=document.createElement('div');
     div.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:8px';
-    var safe = r.replace(/'/g,"\\'");
+    var safe=r.replace(/'/g,"\\'");
     div.innerHTML='<span style="font-size:14px;padding:10px 0">'+r+'</span><button class="btn btn-danger btn-sm" onclick="eliminarResponsable(\''+safe+'\')">✕</button>';
     container.appendChild(div);
   });
@@ -740,29 +859,29 @@ function renderResponsablesAdmin(list){
 async function agregarResponsable(){
   var input=document.getElementById('nuevo-responsable');
   var nombre=input.value.trim();
-  if(!nombre){ toast('Ingresa un nombre', 'error'); return; }
+  if(!nombre){ toast('Ingresa un nombre','error'); return; }
   try {
-    var data = await api('guardarResponsable', { nombre:nombre });
-    if(data.success){ toast('Responsable agregado ✓', 'success'); input.value=''; cargarResponsablesUI(); }
-    else { toast(data.message, 'error'); }
-  } catch(e){ toast('Error de conexión', 'error'); }
+    var data=await api('guardarResponsable',{ nombre:nombre });
+    if(data.success){ toast('Responsable agregado ✓','success'); input.value=''; cargarResponsablesUI(); }
+    else { toast(data.message,'error'); }
+  } catch(e){ toast('Error de conexión','error'); }
 }
 async function eliminarResponsable(nombre){
   if(!confirm('¿Eliminar a "'+nombre+'" de la lista?')) return;
   try {
-    var data = await api('eliminarResponsable', { nombre:nombre });
-    if(data.success){ toast('Responsable eliminado ✓', 'success'); cargarResponsablesUI(); }
-    else toast(data.message, 'error');
-  } catch(e){ toast('Error de conexión', 'error'); }
+    var data=await api('eliminarResponsable',{ nombre:nombre });
+    if(data.success){ toast('Eliminado ✓','success'); cargarResponsablesUI(); }
+    else toast(data.message,'error');
+  } catch(e){ toast('Error de conexión','error'); }
 }
 
-// USUARIOS
+// ── USUARIOS ──
 async function cargarUsuarios(){
   var container=document.getElementById('users-table-body');
   container.innerHTML='<div style="padding:20px;text-align:center"><span class="spinner"></span></div>';
   try {
-    var data = await api('getUsuarios');
-    renderUsersTable(data.users || []);
+    var data=await api('getUsuarios');
+    renderUsersTable(data.users||[]);
   } catch(e){ container.innerHTML='<p style="color:var(--danger);font-size:13px;padding:16px">Error: '+e.message+'</p>'; }
 }
 function renderUsersTable(users){
@@ -770,20 +889,19 @@ function renderUsersTable(users){
   container.innerHTML='';
   if(!users.length){ container.innerHTML='<div class="empty">Sin usuarios</div>'; return; }
   users.forEach(function(u){
-    var row=document.createElement('div');
-    row.className='user-table-row';
+    var row=document.createElement('div'); row.className='user-table-row';
     row.innerHTML='<span style="font-family:var(--mono);font-size:13px;color:var(--accent2)">'+u.usuario+'</span><span style="font-size:13px">'+(u.nombre||'—')+'</span><span class="role-chip role-'+u.rol+'">'+u.rol+'</span><span style="font-size:12px;color:'+(u.activo?'var(--accent)':'var(--danger)')+';font-family:var(--mono)">'+(u.activo?'SI':'NO')+'</span><button class="btn btn-warn btn-sm" onclick=\'abrirModalUsuario('+JSON.stringify(u)+')\'>✎</button><button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario(\''+u.usuario+'\')">✕</button>';
     container.appendChild(row);
   });
 }
 function abrirModalUsuario(user){
-  document.getElementById('modal-u-titulo').textContent = user?'Editar usuario':'Nuevo usuario';
-  document.getElementById('m-usuario').value = user?user.usuario:'';
-  document.getElementById('m-usuario').disabled = !!user;
+  document.getElementById('modal-u-titulo').textContent=user?'Editar usuario':'Nuevo usuario';
+  document.getElementById('m-usuario').value=user?user.usuario:'';
+  document.getElementById('m-usuario').disabled=!!user;
   document.getElementById('m-pass').value='';
-  document.getElementById('m-nombre').value = user?user.nombre:'';
-  document.getElementById('m-rol').value = user?user.rol:'editor';
-  document.getElementById('m-activo').checked = user?user.activo:true;
+  document.getElementById('m-nombre').value=user?user.nombre:'';
+  document.getElementById('m-rol').value=user?user.rol:'editor';
+  document.getElementById('m-activo').checked=user?user.activo:true;
   document.getElementById('modal-usuario').classList.add('open');
 }
 function cerrarModalUsuario(){ document.getElementById('modal-usuario').classList.remove('open'); }
@@ -793,11 +911,11 @@ async function guardarUsuarioModal(){
   var nombre=document.getElementById('m-nombre').value.trim();
   var rol=document.getElementById('m-rol').value;
   var activo=document.getElementById('m-activo').checked;
-  if(!usuario){ toast('Ingresa un nombre de usuario', 'error'); return; }
+  if(!usuario){ toast('Ingresa un nombre de usuario','error'); return; }
   var btn=document.getElementById('btn-modal-guardar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try {
-    var data = await api('guardarUsuario', { usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo });
+    var data=await api('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo });
     if(data.success){ toast('Usuario guardado ✓','success'); cerrarModalUsuario(); cargarUsuarios(); }
     else toast('Error: '+data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
@@ -806,33 +924,30 @@ async function guardarUsuarioModal(){
 async function confirmarEliminarUsuario(usuario){
   if(!confirm('¿Eliminar al usuario "'+usuario+'"?')) return;
   try {
-    var data = await api('eliminarUsuario', { usuario:usuario });
-    if(data.success){ toast('Usuario eliminado ✓','success'); cargarUsuarios(); }
+    var data=await api('eliminarUsuario',{ usuario:usuario });
+    if(data.success){ toast('Eliminado ✓','success'); cargarUsuarios(); }
     else toast('Error: '+data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
 }
 document.getElementById('modal-usuario').addEventListener('click', function(e){ if(e.target===this) cerrarModalUsuario(); });
 
-// CONFIG
-function cargarConfigUI(){
-  document.getElementById('cfg-script-url').value = getScriptUrl();
-  document.getElementById('cfg-sheet-url').value  = getSheetUrl();
-}
+// ── CONFIG ──
+function cargarConfigUI(){ document.getElementById('cfg-script-url').value=getScriptUrl(); document.getElementById('cfg-sheet-url').value=getSheetUrl(); }
 function guardarConfig(){
   localStorage.setItem('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
   localStorage.setItem('cfg_sheetUrl',  document.getElementById('cfg-sheet-url').value.trim());
   toast('Configuración guardada ✓','success');
 }
 
-// TOAST
+// ── TOAST ──
 var toastTimer;
 function toast(msg, type){
-  type = type || 'success';
+  type=type||'success';
   var bar=document.getElementById('status-bar');
   bar.className='status-bar show '+type;
-  bar.innerHTML = type==='loading' ? '<span class="spinner"></span> '+msg : (type==='success'?'✓ ':'✕ ')+msg;
+  bar.innerHTML=type==='loading'?'<span class="spinner"></span> '+msg:(type==='success'?'✓ ':'✕ ')+msg;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ bar.classList.remove('show'); }, 3500);
+  toastTimer=setTimeout(function(){ bar.classList.remove('show'); }, 3500);
 }
 </script>
 </body>
