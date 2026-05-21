@@ -120,6 +120,17 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 @keyframes spin{to{transform:rotate(360deg)}}
 .divider{height:1px;background:var(--border);margin:20px 0}
 .empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;font-family:var(--mono);letter-spacing:.1em}
+
+/* IMAGEN */
+.img-upload-wrap{background:var(--surface2);border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.img-upload-wrap:hover{border-color:var(--accent)}
+.img-upload-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.img-upload-wrap.has-img{border-style:solid;border-color:var(--accent)}
+.img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:8px;display:none;margin-top:10px}
+.img-preview.show{display:block}
+.img-upload-label{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.img-btns{display:flex;gap:8px;margin-top:10px;justify-content:center}
+
 @media(max-width:600px){.form-grid,.dif-grid,.stats-row{grid-template-columns:1fr}.login-card{width:100%;margin:16px;padding:32px 24px}.config-input{width:100%}.config-item{flex-direction:column;align-items:flex-start;gap:10px}.user-table-row,.user-table-header{grid-template-columns:1fr 1fr}.serie-scan-row{grid-template-columns:1fr}}
 </style>
 </head>
@@ -131,6 +142,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
     <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
     <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
+    <label>Bodega</label>
+    <input type="text" id="l-bodega" placeholder="Nombre de la bodega (ej: BQEF)" autocomplete="off" style="text-transform:uppercase">
     <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
   </div>
@@ -215,6 +228,20 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
           <div class="form-group">
             <label>Series <span style="color:var(--text2);font-size:10px">(opcional)</span></label>
             <input type="text" id="f-series-display" placeholder="Se ingresarán al guardar" readonly style="cursor:not-allowed;opacity:.6">
+          </div>
+          <div class="form-group full" style="grid-column:1/-1">
+            <label>Foto del artículo <span style="color:var(--text2);font-size:10px">(opcional)</span></label>
+            <div class="img-upload-wrap" id="img-upload-wrap">
+              <input type="file" id="f-imagen" accept="image/*" capture="environment" onchange="onImageSelected(event)">
+              <div id="img-placeholder">
+                <div style="font-size:28px;margin-bottom:8px">📷</div>
+                <div class="img-upload-label">Toca para tomar foto o seleccionar imagen</div>
+              </div>
+              <img id="img-preview" class="img-preview" alt="Vista previa">
+              <div class="img-btns" id="img-btns" style="display:none">
+                <button type="button" class="btn btn-danger btn-sm" onclick="quitarImagen(event)">✕ Quitar foto</button>
+              </div>
+            </div>
           </div>
         </div>
         <div style="margin-top:8px">
@@ -335,7 +362,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
           <p style="font-size:13px;color:var(--text2)">Guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
           <button class="btn btn-secondary btn-sm" onclick="cargarUsuarios()">↻ Actualizar</button>
         </div>
-        <div class="user-table-header"><span>Usuario</span><span>Nombre</span><span>Rol</span><span>Activo</span><span>Edit</span><span>Borrar</span></div>
+        <div class="user-table-header" style="grid-template-columns:1fr 1fr 100px 100px 80px auto auto"><span>Usuario</span><span>Nombre</span><span>Rol</span><span>Bodega</span><span>Activo</span><span>Edit</span><span>Borrar</span></div>
         <div id="users-table-body"></div>
         <div class="divider"></div>
         <button class="btn btn-secondary" onclick="abrirModalUsuario(null)">+ Nuevo usuario</button>
@@ -422,6 +449,28 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
   </div>
 </div>
 
+<!-- MODAL CONFIRMAR GUARDADO -->
+<div class="modal-overlay" id="modal-confirmar">
+  <div class="modal">
+    <span class="modal-icon">✅</span>
+    <div class="modal-title">¿Está correcto?</div>
+    <div class="modal-desc">
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">CÓDIGO</td><td style="padding:4px 0;font-weight:600" id="conf-codigo">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">DESCRIPCIÓN</td><td style="padding:4px 0" id="conf-desc">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">CONTEO</td><td style="padding:4px 0;font-weight:600;color:var(--accent)" id="conf-conteo">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">UBICACIÓN</td><td style="padding:4px 0" id="conf-ubicacion">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">RESPONSABLE</td><td style="padding:4px 0" id="conf-responsable">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">FOTO</td><td style="padding:4px 0;font-size:12px" id="conf-imagen">—</td></tr>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="responderConfirmacion(false)">No, corregir</button>
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="responderConfirmacion(true)">Sí, continuar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL TIENE SERIE -->
 <div class="modal-overlay" id="modal-tiene-serie">
   <div class="modal">
@@ -443,6 +492,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <div class="form-group"><label>Contraseña <span style="color:var(--text2);font-size:10px">(vacío = no cambiar)</span></label><input type="password" id="m-pass" placeholder="••••••••"></div>
     <div class="form-group"><label>Nombre completo</label><input type="text" id="m-nombre" placeholder="ej: Juan Pérez"></div>
     <div class="form-group"><label>Rol</label><select id="m-rol"><option value="admin">Admin</option><option value="editor" selected>Editor</option><option value="lector">Lector</option></select></div>
+    <div class="form-group"><label>Bodega asignada <span style="color:var(--text2);font-size:10px">(vacío = todas)</span></label><input type="text" id="m-bodega" placeholder="ej: BQEF" style="text-transform:uppercase"></div>
     <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
       <label style="margin:0">Activo</label>
       <label class="toggle"><input type="checkbox" id="m-activo" checked><span class="toggle-slider"></span></label>
@@ -466,7 +516,8 @@ function getSheetUrl() { return localStorage.getItem('cfg_sheetUrl')  || SHEET_U
 var state = {
   currentUser: null, productCache: {}, resumenData: [],
   bodega: '', mostrarStock: false,
-  formActual: {}, seriesIngresadas: [], seriesEstaSession: []
+  formActual: {}, seriesIngresadas: [], seriesEstaSession: [],
+  imagenBase64: ''
 };
 
 async function api(action, payload){
@@ -487,9 +538,12 @@ async function doLogin(){
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verificando…';
   errEl.style.display = 'none';
   try {
-    var data = await api('login', { usuario: usuario, pass: pass });
+    var bodega = document.getElementById('l-bodega').value.trim().toUpperCase();
+    if(!bodega){ showLoginError('Ingresa el nombre de la bodega'); btn.disabled=false; btn.innerHTML='<span>Ingresar</span><span>→</span>'; return; }
+    var data = await api('login', { usuario: usuario, pass: pass, bodega: bodega });
     if (data.success){
       state.currentUser = data;
+      state.bodega = data.bodega || '';
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       applyRole(data.rol, data.nombre || data.usuario);
@@ -499,13 +553,15 @@ async function doLogin(){
   btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
 }
 function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
-document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-bodega').focus(); });
+document.getElementById('l-bodega').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('l-user').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-pass').focus(); });
 function doLogout(){
   state.currentUser=null;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('l-pass').value='';
+  document.getElementById('l-bodega').value='';
   document.getElementById('login-error').style.display='none';
 }
 function applyRole(role, nombre){
@@ -526,14 +582,18 @@ function applyRole(role, nombre){
 async function initApp(){
   cargarResponsablesUI();
   cargarConfigUI();
+  // Mostrar bodega en topbar (ya viene del login)
+  if(state.bodega){
+    var el = document.getElementById('bodega-topbar');
+    el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
+  }
+  // Cargar URL del Sheet desde hoja RESPONSABLES col D
   try {
-    var data = await api('getBodega');
-    state.bodega = data.bodega || '';
-    if(state.bodega){
-      var el = document.getElementById('bodega-topbar');
-      el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
+    var cfgData = await api('getConfig');
+    if(cfgData.sheetUrl && cfgData.sheetUrl !== ''){
+      localStorage.setItem('cfg_sheetUrl', cfgData.sheetUrl);
     }
-  } catch(e){ state.bodega = ''; }
+  } catch(e){ console.warn('No se pudo cargar config del sheet'); }
   setTimeout(function(){ document.getElementById('codigo-input').focus(); }, 200);
 }
 
@@ -631,9 +691,22 @@ function iniciarGuardado(){
     conteo: document.getElementById('f-conteo').value.trim(),
     ubicacion: document.getElementById('f-ubicacion').value.trim(),
     responsable: document.getElementById('f-responsable').value,
+    imagen: state.imagenBase64 || '',
   };
   state.seriesIngresadas = [];
-  document.getElementById('modal-tiene-serie').classList.add('open');
+  // Mostrar modal de confirmación
+  document.getElementById('conf-codigo').textContent = codigo;
+  document.getElementById('conf-desc').textContent = state.formActual.descripcion;
+  document.getElementById('conf-conteo').textContent = state.formActual.conteo;
+  document.getElementById('conf-ubicacion').textContent = state.formActual.ubicacion;
+  document.getElementById('conf-responsable').textContent = state.formActual.responsable;
+  document.getElementById('conf-imagen').textContent = state.imagenBase64 ? '✓ Con foto' : 'Sin foto';
+  document.getElementById('modal-confirmar').classList.add('open');
+}
+function responderConfirmacion(ok){
+  document.getElementById('modal-confirmar').classList.remove('open');
+  if(ok) document.getElementById('modal-tiene-serie').classList.add('open');
+  // Si no, regresa al formulario sin guardar
 }
 function responderTieneSerie(tiene){
   document.getElementById('modal-tiene-serie').classList.remove('open');
@@ -644,7 +717,7 @@ async function guardarConteo(){
   var btn = document.getElementById('btn-guardar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando…';
   try {
-    var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario });
+    var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, imagen:f.imagen||'' });
     if(data.success){
       toast('Registro guardado ✓', 'success');
       addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true });
@@ -661,7 +734,8 @@ function limpiarFormulario(){
   document.getElementById('stock-box').style.display='none';
   ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('field-error'); });
   ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
-  state.seriesIngresadas=[]; state.formActual={};
+  state.seriesIngresadas=[]; state.formActual={}; state.imagenBase64='';
+  quitarImagen(null);
   document.getElementById('codigo-input').focus();
 }
 
@@ -751,6 +825,25 @@ async function guardarSerieFisica(numSerie, forzar){
   var data = await api('guardarSerieFisica', { codigo:state.formActual.codigo, serie:numSerie, bodega:state.bodega, forzar:forzar.toString() });
   if(!data.success) throw new Error(data.message);
   state.seriesIngresadas.push(numSerie);
+  // Quitar de la lista de esperadas
+  quitarDeEsperadas(numSerie);
+}
+function quitarDeEsperadas(numSerie){
+  var container = document.getElementById('sp-esperadas-list');
+  var items = container.querySelectorAll('.serie-item');
+  items.forEach(function(item){
+    var span = item.querySelector('.serie-num');
+    if(span && span.textContent.trim().toUpperCase() === numSerie.toUpperCase()){
+      item.style.transition = 'all .3s';
+      item.style.opacity = '0';
+      item.style.transform = 'translateX(20px)';
+      setTimeout(function(){ item.remove();
+        if(!container.querySelector('.serie-item')){
+          container.innerHTML = '<div class="empty" style="color:var(--accent)">✓ Todas las series ingresadas</div>';
+        }
+      }, 300);
+    }
+  });
 }
 function agregarSerieLog(serie, tipo, label){
   document.getElementById('series-empty').style.display='none';
@@ -890,7 +983,8 @@ function renderUsersTable(users){
   if(!users.length){ container.innerHTML='<div class="empty">Sin usuarios</div>'; return; }
   users.forEach(function(u){
     var row=document.createElement('div'); row.className='user-table-row';
-    row.innerHTML='<span style="font-family:var(--mono);font-size:13px;color:var(--accent2)">'+u.usuario+'</span><span style="font-size:13px">'+(u.nombre||'—')+'</span><span class="role-chip role-'+u.rol+'">'+u.rol+'</span><span style="font-size:12px;color:'+(u.activo?'var(--accent)':'var(--danger)')+';font-family:var(--mono)">'+(u.activo?'SI':'NO')+'</span><button class="btn btn-warn btn-sm" onclick=\'abrirModalUsuario('+JSON.stringify(u)+')\'>✎</button><button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario(\''+u.usuario+'\')">✕</button>';
+    row.style.gridTemplateColumns='1fr 1fr 100px 100px 80px auto auto';
+    row.innerHTML='<span style="font-family:var(--mono);font-size:13px;color:var(--accent2)">'+u.usuario+'</span><span style="font-size:13px">'+(u.nombre||'—')+'</span><span class="role-chip role-'+u.rol+'">'+u.rol+'</span><span style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+(u.bodega||'Todas')+'</span><span style="font-size:12px;color:'+(u.activo?'var(--accent)':'var(--danger)')+';font-family:var(--mono)">'+(u.activo?'SI':'NO')+'</span><button class="btn btn-warn btn-sm" onclick=\'abrirModalUsuario('+JSON.stringify(u)+')\'> ✎</button><button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario(\''+u.usuario+'\')" >✕</button>';color:'+(u.activo?'var(--accent)':'var(--danger)')+';font-family:var(--mono)">'+(u.activo?'SI':'NO')+'</span><button class="btn btn-warn btn-sm" onclick=\'abrirModalUsuario('+JSON.stringify(u)+')\'>✎</button><button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario(\''+u.usuario+'\')">✕</button>';
     container.appendChild(row);
   });
 }
@@ -902,6 +996,7 @@ function abrirModalUsuario(user){
   document.getElementById('m-nombre').value=user?user.nombre:'';
   document.getElementById('m-rol').value=user?user.rol:'editor';
   document.getElementById('m-activo').checked=user?user.activo:true;
+  document.getElementById('m-bodega').value=user?(user.bodega||''):'';
   document.getElementById('modal-usuario').classList.add('open');
 }
 function cerrarModalUsuario(){ document.getElementById('modal-usuario').classList.remove('open'); }
@@ -915,7 +1010,8 @@ async function guardarUsuarioModal(){
   var btn=document.getElementById('btn-modal-guardar');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try {
-    var data=await api('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo });
+    var bodegaM=document.getElementById('m-bodega').value.trim().toUpperCase();
+    var data=await api('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo, bodega:bodegaM });
     if(data.success){ toast('Usuario guardado ✓','success'); cerrarModalUsuario(); cargarUsuarios(); }
     else toast('Error: '+data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
@@ -937,6 +1033,49 @@ function guardarConfig(){
   localStorage.setItem('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
   localStorage.setItem('cfg_sheetUrl',  document.getElementById('cfg-sheet-url').value.trim());
   toast('Configuración guardada ✓','success');
+}
+
+
+// ── IMAGEN ──
+function onImageSelected(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  var maxSize = 800; // px max width/height
+  var quality = 0.7;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      var canvas = document.createElement('canvas');
+      var w = img.width, h = img.height;
+      if(w > maxSize || h > maxSize){
+        if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+        else { w = Math.round(w * maxSize / h); h = maxSize; }
+      }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var b64 = canvas.toDataURL('image/jpeg', quality);
+      state.imagenBase64 = b64;
+      document.getElementById('img-preview').src = b64;
+      document.getElementById('img-preview').classList.add('show');
+      document.getElementById('img-upload-wrap').classList.add('has-img');
+      document.getElementById('img-placeholder').style.display = 'none';
+      document.getElementById('img-btns').style.display = 'flex';
+      toast('Foto cargada ✓', 'success');
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function quitarImagen(e){
+  if(e) e.stopPropagation();
+  state.imagenBase64 = '';
+  document.getElementById('f-imagen').value = '';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-preview').classList.remove('show');
+  document.getElementById('img-upload-wrap').classList.remove('has-img');
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-btns').style.display = 'none';
 }
 
 // ── TOAST ──
