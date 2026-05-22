@@ -143,8 +143,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
     <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
     <label>Bodega</label>
-    <input type="text" id="l-bodega" placeholder="Nombre de la bodega (ej: BQEF)" autocomplete="off" style="text-transform:uppercase">
+    <select id="l-bodega" style="margin-bottom:20px">
+      <option value="">— Selecciona una bodega —</option>
+    </select>
     <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
+    <p style="margin-top:12px;font-size:11px;color:var(--text2);text-align:center;font-family:var(--mono);cursor:pointer" onclick="mostrarConfigBodega()">⚙ Configurar bodegas</p>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
   </div>
 </div>
@@ -382,7 +385,35 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <!-- CONFIG -->
     <div class="panel" id="tab-config">
       <div class="card">
-        <div class="card-title">Configuración general</div>
+        <div class="card-title">Bodegas configuradas</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Cada bodega tiene su propia URL de script y sheet. Los usuarios verán estas bodegas en el login.</p>
+        <div id="bodegas-lista" style="margin-bottom:20px"></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+          <div class="card-title" style="margin-bottom:14px">Agregar / editar bodega</div>
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="form-group">
+              <label>Nombre de la bodega</label>
+              <input type="text" id="nb-nombre" placeholder="ej: BQEF" style="text-transform:uppercase;margin-bottom:0">
+            </div>
+            <div class="form-group">
+              <label>Etiqueta visible</label>
+              <input type="text" id="nb-label" placeholder="ej: Bodega Principal" style="margin-bottom:0">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>URL del Apps Script (termina en /exec)</label>
+            <input type="text" id="nb-script" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:0">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>URL del Google Sheet activo</label>
+            <input type="text" id="nb-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin-bottom:0">
+          </div>
+          <button class="btn btn-primary" onclick="agregarBodega()" style="width:auto">+ Guardar bodega</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Configuración heredada (manual)</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Si no usas el selector de bodegas, puedes configurar manualmente el script y sheet activos aquí.</p>
         <div class="config-item">
           <div><div class="config-label">URL del Apps Script</div><div class="config-desc">Termina en /exec · Actualiza con cada nuevo deployment</div></div>
           <input type="text" class="config-input" id="cfg-script-url">
@@ -504,6 +535,28 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
   </div>
 </div>
 
+<!-- MODAL CONFIG BODEGA (desde login) -->
+<div class="modal-overlay" id="modal-cfg-bodega">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <div class="modal-title" style="margin-bottom:4px">⚙ Configurar bodegas</div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Agrega o edita las bodegas disponibles en el login.</p>
+    <div id="mb-lista" style="margin-bottom:16px;max-height:180px;overflow-y:auto"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px">Agregar bodega</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="display:block;margin-bottom:4px">Código</label><input type="text" id="mb-nombre" placeholder="BQEF" style="text-transform:uppercase;margin-bottom:0"></div>
+        <div><label style="display:block;margin-bottom:4px">Etiqueta</label><input type="text" id="mb-label" placeholder="Bodega Principal" style="margin-bottom:0"></div>
+      </div>
+      <div style="margin-bottom:10px"><label style="display:block;margin-bottom:4px">URL Apps Script (/exec)</label><input type="text" id="mb-script" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:0;font-size:12px"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:4px">URL Google Sheet</label><input type="text" id="mb-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin-bottom:0;font-size:12px"></div>
+      <button class="btn btn-primary" onclick="agregarBodegaModal()" style="width:auto;font-size:12px">+ Agregar</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="cerrarModalCfgBodega()">Listo</button>
+    </div>
+  </div>
+</div>
+
 <div id="status-bar"></div>
 
 <script>
@@ -529,6 +582,130 @@ async function api(action, payload){
 }
 
 // ── LOGIN ──
+// ── BODEGAS STORAGE ──
+function getBodegas(){
+  try{ return JSON.parse(localStorage.getItem('cfg_bodegas')||'[]'); }catch(e){ return []; }
+}
+function saveBodegas(list){ localStorage.setItem('cfg_bodegas', JSON.stringify(list)); }
+
+function renderLoginBodegas(){
+  var sel = document.getElementById('l-bodega');
+  var bodegas = getBodegas();
+  // Preserve current selection
+  var prev = sel.value;
+  sel.innerHTML = '<option value="">— Selecciona una bodega —</option>';
+  bodegas.forEach(function(b){
+    var opt = document.createElement('option');
+    opt.value = b.codigo;
+    opt.textContent = b.codigo + (b.label ? ' — ' + b.label : '');
+    opt.dataset.script = b.scriptUrl || '';
+    opt.dataset.sheet  = b.sheetUrl  || '';
+    sel.appendChild(opt);
+  });
+  if(prev) sel.value = prev;
+  // If only one bodega, auto-select it
+  if(bodegas.length === 1) sel.value = bodegas[0].codigo;
+}
+
+function onBodegaChange(){
+  var sel = document.getElementById('l-bodega');
+  var opt = sel.options[sel.selectedIndex];
+  if(opt && opt.dataset.script){
+    localStorage.setItem('cfg_scriptUrl', opt.dataset.script);
+    if(opt.dataset.sheet) localStorage.setItem('cfg_sheetUrl', opt.dataset.sheet);
+  }
+}
+
+// Modal config bodega desde login
+function mostrarConfigBodega(){
+  renderMbLista();
+  document.getElementById('modal-cfg-bodega').classList.add('open');
+}
+function cerrarModalCfgBodega(){
+  document.getElementById('modal-cfg-bodega').classList.remove('open');
+  renderLoginBodegas();
+}
+function renderMbLista(){
+  var bodegas = getBodegas();
+  var el = document.getElementById('mb-lista');
+  if(!bodegas.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2);font-family:var(--mono);text-align:center;padding:12px 0">Sin bodegas configuradas aún</p>'; return; }
+  el.innerHTML = bodegas.map(function(b,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px">'
+      +'<div><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">'+b.codigo+'</span>'
+      +(b.label?'<span style="font-size:12px;color:var(--text2);margin-left:8px">'+b.label+'</span>':'')+'</div>'
+      +'<button class="btn btn-danger btn-sm" onclick="eliminarBodegaModal('+i+')">✕ Eliminar</button>'
+      +'</div>';
+  }).join('');
+}
+function agregarBodegaModal(){
+  var codigo = document.getElementById('mb-nombre').value.trim().toUpperCase();
+  var label  = document.getElementById('mb-label').value.trim();
+  var script = document.getElementById('mb-script').value.trim();
+  var sheet  = document.getElementById('mb-sheet').value.trim();
+  if(!codigo){ showStatus('Ingresa el código de la bodega','error'); return; }
+  if(!script){ showStatus('Ingresa la URL del script','error'); return; }
+  var bodegas = getBodegas();
+  var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
+  var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
+  if(idx>=0) bodegas[idx]=entry; else bodegas.push(entry);
+  saveBodegas(bodegas);
+  document.getElementById('mb-nombre').value='';
+  document.getElementById('mb-label').value='';
+  document.getElementById('mb-script').value='';
+  document.getElementById('mb-sheet').value='';
+  renderMbLista();
+  showStatus('Bodega guardada','success');
+}
+function eliminarBodegaModal(i){
+  var bodegas = getBodegas();
+  bodegas.splice(i,1);
+  saveBodegas(bodegas);
+  renderMbLista();
+}
+
+// Config panel bodega list (admin)
+function renderBodegasLista(){
+  var bodegas = getBodegas();
+  var el = document.getElementById('bodegas-lista');
+  if(!el) return;
+  if(!bodegas.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2);font-family:var(--mono)">Sin bodegas configuradas. Agrega la primera abajo.</p>'; return; }
+  el.innerHTML = bodegas.map(function(b,i){
+    return '<div style="display:grid;grid-template-columns:80px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(42,53,72,.5)">'
+      +'<span style="font-family:var(--mono);font-size:13px;color:var(--accent)">'+b.codigo+'</span>'
+      +'<div><div style="font-size:13px">'+( b.label||'—')+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px">'+(b.scriptUrl||'sin script')+'</div></div>'
+      +'<button class="btn btn-danger btn-sm" onclick="eliminarBodegaAdmin('+i+')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function eliminarBodegaAdmin(i){
+  var bodegas = getBodegas();
+  bodegas.splice(i,1);
+  saveBodegas(bodegas);
+  renderBodegasLista();
+  renderLoginBodegas();
+}
+function agregarBodega(){
+  var codigo = document.getElementById('nb-nombre').value.trim().toUpperCase();
+  var label  = document.getElementById('nb-label').value.trim();
+  var script = document.getElementById('nb-script').value.trim();
+  var sheet  = document.getElementById('nb-sheet').value.trim();
+  if(!codigo){ showStatus('Ingresa el código de la bodega','error'); return; }
+  if(!script){ showStatus('Ingresa la URL del script','error'); return; }
+  var bodegas = getBodegas();
+  var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
+  var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
+  if(idx>=0) bodegas[idx]=entry; else bodegas.push(entry);
+  saveBodegas(bodegas);
+  document.getElementById('nb-nombre').value='';
+  document.getElementById('nb-label').value='';
+  document.getElementById('nb-script').value='';
+  document.getElementById('nb-sheet').value='';
+  renderBodegasLista();
+  renderLoginBodegas();
+  showStatus('Bodega guardada correctamente','success');
+}
+
 async function doLogin(){
   var usuario = document.getElementById('l-user').value.trim();
   var pass    = document.getElementById('l-pass').value;
@@ -539,7 +716,9 @@ async function doLogin(){
   errEl.style.display = 'none';
   try {
     var bodega = document.getElementById('l-bodega').value.trim().toUpperCase();
-    if(!bodega){ showLoginError('Ingresa el nombre de la bodega'); btn.disabled=false; btn.innerHTML='<span>Ingresar</span><span>→</span>'; return; }
+    if(!bodega){ showLoginError('Selecciona una bodega'); btn.disabled=false; btn.innerHTML='<span>Ingresar</span><span>→</span>'; return; }
+    // Auto-apply script URL from selected bodega
+    onBodegaChange();
     var data = await api('login', { usuario: usuario, pass: pass, bodega: bodega });
     if (data.success){
       state.currentUser = data;
@@ -554,7 +733,6 @@ async function doLogin(){
 }
 function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
 document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-bodega').focus(); });
-document.getElementById('l-bodega').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('l-user').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-pass').focus(); });
 function doLogout(){
   state.currentUser=null;
@@ -564,6 +742,18 @@ function doLogout(){
   document.getElementById('l-bodega').value='';
   document.getElementById('login-error').style.display='none';
 }
+
+// Init login dropdown on page load
+renderLoginBodegas();
+// Seed BQEF bodega from hardcoded constants if no bodegas exist yet
+(function(){
+  var existing = getBodegas();
+  if(existing.length === 0 && SCRIPT_URL && SCRIPT_URL !== ''){
+    existing.push({ codigo: 'BQEF', label: 'Bodega Principal', scriptUrl: SCRIPT_URL, sheetUrl: SHEET_URL });
+    saveBodegas(existing);
+    renderLoginBodegas();
+  }
+})();
 function applyRole(role, nombre){
   document.getElementById('ui-nombre').textContent = nombre;
   var chip = document.getElementById('ui-role-chip');
@@ -1028,7 +1218,7 @@ async function confirmarEliminarUsuario(usuario){
 document.getElementById('modal-usuario').addEventListener('click', function(e){ if(e.target===this) cerrarModalUsuario(); });
 
 // ── CONFIG ──
-function cargarConfigUI(){ document.getElementById('cfg-script-url').value=getScriptUrl(); document.getElementById('cfg-sheet-url').value=getSheetUrl(); }
+function cargarConfigUI(){ document.getElementById('cfg-script-url').value=getScriptUrl(); document.getElementById('cfg-sheet-url').value=getSheetUrl(); renderBodegasLista(); }
 function guardarConfig(){
   localStorage.setItem('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
   localStorage.setItem('cfg_sheetUrl',  document.getElementById('cfg-sheet-url').value.trim());
