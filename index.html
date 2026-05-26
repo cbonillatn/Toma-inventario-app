@@ -138,8 +138,9 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 
 <div id="login-screen">
   <div class="login-card">
-    <p class="login-logo">◈ BQEF System</p>
+    <p class="login-logo">◈ Sistema Inventario</p>
     <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
+    <p id="login-sync-msg" style="font-size:11px;color:var(--accent2);font-family:var(--mono);margin-bottom:8px;display:none">⟳ Sincronizando bodegas…</p>
     <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
     <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
     <label>Bodega</label>
@@ -637,7 +638,7 @@ function renderMbLista(){
       +'</div>';
   }).join('');
 }
-function agregarBodegaModal(){
+async function agregarBodegaModal(){
   var codigo = document.getElementById('mb-nombre').value.trim().toUpperCase();
   var label  = document.getElementById('mb-label').value.trim();
   var script = document.getElementById('mb-script').value.trim();
@@ -655,6 +656,11 @@ function agregarBodegaModal(){
   document.getElementById('mb-sheet').value='';
   renderMbLista();
   showStatus('Bodega guardada','success');
+  // Sincronizar al servidor en background
+  try {
+    var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
+    await fetch(getScriptUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
+  } catch(e){ /* silencioso */ }
 }
 function eliminarBodegaModal(i){
   var bodegas = getBodegas();
@@ -685,7 +691,7 @@ function eliminarBodegaAdmin(i){
   renderBodegasLista();
   renderLoginBodegas();
 }
-function agregarBodega(){
+async function agregarBodega(){
   var codigo = document.getElementById('nb-nombre').value.trim().toUpperCase();
   var label  = document.getElementById('nb-label').value.trim();
   var script = document.getElementById('nb-script').value.trim();
@@ -703,7 +709,15 @@ function agregarBodega(){
   document.getElementById('nb-sheet').value='';
   renderBodegasLista();
   renderLoginBodegas();
-  showStatus('Bodega guardada correctamente','success');
+  // Sincronizar al servidor
+  try {
+    showStatus('Guardando en servidor…','loading');
+    var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
+    var res = await fetch(getScriptUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
+    var data = await res.json();
+    if(data.success) showStatus('Bodega guardada y sincronizada ✓','success');
+    else showStatus('Local ok · servidor: ' + data.message,'error');
+  } catch(e){ showStatus('Guardada local. Sin conexión al servidor.','error'); }
 }
 
 async function doLogin(){
@@ -723,6 +737,9 @@ async function doLogin(){
     if (data.success){
       state.currentUser = data;
       state.bodega = data.bodega || '';
+      // Si el servidor retorna scriptUrl para la bodega, usarlo automáticamente
+      if(data.scriptUrl){ localStorage.setItem('cfg_scriptUrl', data.scriptUrl); }
+      if(data.sheetUrl)  { localStorage.setItem('cfg_sheetUrl',  data.sheetUrl);  }
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       applyRole(data.rol, data.nombre || data.usuario);
@@ -744,16 +761,37 @@ function doLogout(){
 }
 
 // Init login dropdown on page load
-renderLoginBodegas();
-// Seed BQEF bodega from hardcoded constants if no bodegas exist yet
+// ── AUTO-FETCH BODEGAS desde el script maestro ──
 (function(){
+  // Siempre intentar refrescar desde el servidor
+  renderLoginBodegas(); // render local primero (puede estar vacío)
+  
+  // Seed BQEF si no hay nada local (primera vez)
   var existing = getBodegas();
-  if(existing.length === 0 && SCRIPT_URL && SCRIPT_URL !== ''){
+  if(existing.length === 0 && SCRIPT_URL){
     existing.push({ codigo: 'BQEF', label: 'Bodega Principal', scriptUrl: SCRIPT_URL, sheetUrl: SHEET_URL });
     saveBodegas(existing);
     renderLoginBodegas();
   }
+
+  // Intentar refrescar la lista desde el servidor en background
+  fetchBodegasRemoto();
 })();
+
+async function fetchBodegasRemoto(){
+  var syncMsg = document.getElementById('login-sync-msg');
+  if(syncMsg) syncMsg.style.display='block';
+  try {
+    var res = await fetch(SCRIPT_URL + '?action=getBodegas', { method:'GET', redirect:'follow' });
+    if(!res.ok) return;
+    var data = await res.json();
+    if(data && data.bodegas && data.bodegas.length > 0){
+      saveBodegas(data.bodegas);
+      renderLoginBodegas();
+    }
+  } catch(e){ /* silencioso — usa caché local */ }
+  finally { if(syncMsg) syncMsg.style.display='none'; }
+}
 function applyRole(role, nombre){
   document.getElementById('ui-nombre').textContent = nombre;
   var chip = document.getElementById('ui-role-chip');
