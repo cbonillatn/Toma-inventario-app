@@ -576,20 +576,8 @@ var state = {
 
 async function api(action, payload){
   payload = payload || {};
-  // Si el payload tiene imagen (base64 puede ser muy grande), usar POST
-  var tieneImagen = payload.imagen && payload.imagen.length > 0;
-  if(tieneImagen){
-    var body = JSON.stringify(Object.assign({ action: action }, payload));
-    var res = await fetch(getScriptUrl(), {
-      method: 'POST',
-      redirect: 'follow',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: body
-    });
-    if(!res.ok) throw new Error('Error de red: ' + res.status);
-    return res.json();
-  }
-  // Sin imagen: GET normal
+  // Siempre GET — CORS bloquea POST desde GitHub Pages hacia Apps Script
+  // La imagen ya viene comprimida y sin prefijo base64 (ver onImageSelected)
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
   var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
@@ -657,8 +645,8 @@ async function agregarBodegaModal(){
   var label  = document.getElementById('mb-label').value.trim();
   var script = document.getElementById('mb-script').value.trim();
   var sheet  = document.getElementById('mb-sheet').value.trim();
-  if(!codigo){ showStatus('Ingresa el código de la bodega','error'); return; }
-  if(!script){ showStatus('Ingresa la URL del script','error'); return; }
+  if(!codigo){ toast('Ingresa el código de la bodega','error'); return; }
+  if(!script){ toast('Ingresa la URL del script','error'); return; }
   var bodegas = getBodegas();
   var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
   var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
@@ -669,7 +657,7 @@ async function agregarBodegaModal(){
   document.getElementById('mb-script').value='';
   document.getElementById('mb-sheet').value='';
   renderMbLista();
-  showStatus('Bodega guardada','success');
+  toast('Bodega guardada','success');
   // Sincronizar al servidor en background
   try {
     var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
@@ -710,8 +698,8 @@ async function agregarBodega(){
   var label  = document.getElementById('nb-label').value.trim();
   var script = document.getElementById('nb-script').value.trim();
   var sheet  = document.getElementById('nb-sheet').value.trim();
-  if(!codigo){ showStatus('Ingresa el código de la bodega','error'); return; }
-  if(!script){ showStatus('Ingresa la URL del script','error'); return; }
+  if(!codigo){ toast('Ingresa el código de la bodega','error'); return; }
+  if(!script){ toast('Ingresa la URL del script','error'); return; }
   var bodegas = getBodegas();
   var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
   var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
@@ -725,13 +713,13 @@ async function agregarBodega(){
   renderLoginBodegas();
   // Sincronizar al servidor
   try {
-    showStatus('Guardando en servidor…','loading');
+    toast('Guardando en servidor…','info');
     var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
     var res = await fetch(getScriptUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
     var data = await res.json();
-    if(data.success) showStatus('Bodega guardada y sincronizada ✓','success');
-    else showStatus('Local ok · servidor: ' + data.message,'error');
-  } catch(e){ showStatus('Guardada local. Sin conexión al servidor.','error'); }
+    if(data.success) toast('Bodega guardada y sincronizada ✓','success');
+    else toast('Local ok · servidor: ' + data.message,'error');
+  } catch(e){ toast('Guardada local. Sin conexión al servidor.','error'); }
 }
 
 async function doLogin(){
@@ -1282,28 +1270,32 @@ function guardarConfig(){
 function onImageSelected(event){
   var file = event.target.files[0];
   if(!file) return;
-  var maxSize = 800; // px max width/height
-  var quality = 0.7;
+  // Comprimir agresivamente para caber en URL GET (~6KB max base64 sin prefijo)
   var reader = new FileReader();
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
       var canvas = document.createElement('canvas');
       var w = img.width, h = img.height;
-      if(w > maxSize || h > maxSize){
-        if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
-        else { w = Math.round(w * maxSize / h); h = maxSize; }
-      }
+      var maxSize = 300; // px — suficiente para referencia visual
+      if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+      else      { w = Math.round(w * maxSize / h); h = maxSize; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      var b64 = canvas.toDataURL('image/jpeg', quality);
-      state.imagenBase64 = b64;
-      document.getElementById('img-preview').src = b64;
+      // Intentar calidades decrecientes hasta que quepa en ~7000 chars
+      var b64full, b64, q = 0.3;
+      do {
+        b64full = canvas.toDataURL('image/jpeg', q);
+        b64 = b64full.split(',')[1]; // quitar prefijo data:image/jpeg;base64,
+        q -= 0.05;
+      } while(b64.length > 7000 && q > 0.05);
+      state.imagenBase64 = b64; // solo datos, sin prefijo
+      document.getElementById('img-preview').src = b64full; // preview con prefijo
       document.getElementById('img-preview').classList.add('show');
       document.getElementById('img-upload-wrap').classList.add('has-img');
       document.getElementById('img-placeholder').style.display = 'none';
       document.getElementById('img-btns').style.display = 'flex';
-      toast('Foto cargada ✓', 'success');
+      toast('Foto cargada ✓ (' + Math.round(b64.length/1024) + 'KB)', 'success');
     };
     img.src = e.target.result;
   };
