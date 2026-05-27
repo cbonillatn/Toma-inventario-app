@@ -576,6 +576,20 @@ var state = {
 
 async function api(action, payload){
   payload = payload || {};
+  // Si el payload tiene imagen (base64 puede ser muy grande), usar POST
+  var tieneImagen = payload.imagen && payload.imagen.length > 0;
+  if(tieneImagen){
+    var body = JSON.stringify(Object.assign({ action: action }, payload));
+    var res = await fetch(getScriptUrl(), {
+      method: 'POST',
+      redirect: 'follow',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: body
+    });
+    if(!res.ok) throw new Error('Error de red: ' + res.status);
+    return res.json();
+  }
+  // Sin imagen: GET normal
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
   var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
