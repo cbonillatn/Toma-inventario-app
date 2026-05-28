@@ -571,7 +571,8 @@ var state = {
   currentUser: null, productCache: {}, resumenData: [],
   bodega: '', mostrarStock: false,
   formActual: {}, seriesIngresadas: [], seriesEstaSession: [],
-  imagenBase64: ''
+  imagenBase64: '',   // solo para preview local
+  imagenUrl: ''       // URL de Drive (lo que se guarda en sheet)
 };
 
 async function api(action, payload){
@@ -921,7 +922,7 @@ function iniciarGuardado(){
     conteo: document.getElementById('f-conteo').value.trim(),
     ubicacion: document.getElementById('f-ubicacion').value.trim(),
     responsable: document.getElementById('f-responsable').value,
-    imagen: state.imagenBase64 || '',
+    imagen: state.imagenUrl || '',
   };
   state.seriesIngresadas = [];
   // Mostrar modal de confirmación
@@ -964,7 +965,7 @@ function limpiarFormulario(){
   document.getElementById('stock-box').style.display='none';
   ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('field-error'); });
   ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
-  state.seriesIngresadas=[]; state.formActual={}; state.imagenBase64='';
+  state.seriesIngresadas=[]; state.formActual={}; state.imagenBase64=''; state.imagenUrl='';
   quitarImagen(null);
   document.getElementById('codigo-input').focus();
 }
@@ -1267,43 +1268,101 @@ function guardarConfig(){
 
 
 // ── IMAGEN ──
+var DRIVE_FOLDER_ID = '19xQKkqkRpzWGmdlK66uL7K7w_1256j0_';
+
 function onImageSelected(event){
   var file = event.target.files[0];
   if(!file) return;
-  // Comprimir agresivamente para caber en URL GET (~6KB max base64 sin prefijo)
+  // Mostrar preview local inmediatamente
   var reader = new FileReader();
   reader.onload = function(e){
     var img = new Image();
     img.onload = function(){
+      // Comprimir a 800px para preview y para subir
       var canvas = document.createElement('canvas');
       var w = img.width, h = img.height;
-      var maxSize = 300; // px — suficiente para referencia visual
+      var maxSize = 800;
       if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
       else      { w = Math.round(w * maxSize / h); h = maxSize; }
       canvas.width = w; canvas.height = h;
       canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      // Intentar calidades decrecientes hasta que quepa en ~7000 chars
-      var b64full, b64, q = 0.3;
-      do {
-        b64full = canvas.toDataURL('image/jpeg', q);
-        b64 = b64full.split(',')[1]; // quitar prefijo data:image/jpeg;base64,
-        q -= 0.05;
-      } while(b64.length > 7000 && q > 0.05);
-      state.imagenBase64 = b64; // solo datos, sin prefijo
-      document.getElementById('img-preview').src = b64full; // preview con prefijo
+      var b64full = canvas.toDataURL('image/jpeg', 0.75);
+      state.imagenBase64 = b64full; // para preview
+      state.imagenUrl = '';          // se llena al subir
+      document.getElementById('img-preview').src = b64full;
       document.getElementById('img-preview').classList.add('show');
       document.getElementById('img-upload-wrap').classList.add('has-img');
       document.getElementById('img-placeholder').style.display = 'none';
       document.getElementById('img-btns').style.display = 'flex';
-      toast('Foto cargada ✓ (' + Math.round(b64.length/1024) + 'KB)', 'success');
+      toast('Foto lista · subiendo a Drive…', 'loading');
+      // Subir a Google Drive en background
+      subirImagenDrive(canvas, b64full);
     };
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
+
+async function subirImagenDrive(canvas, b64full){
+  try {
+    // Convertir base64 a Blob
+    var arr = b64full.split(','), mime = 'image/jpeg';
+    var bstr = atob(arr[1]), n = bstr.length, u8 = new Uint8Array(n);
+    for(var i=0;i<n;i++) u8[i] = bstr.charCodeAt(i);
+    var blob = new Blob([u8], {type: mime});
+
+    // Nombre único para el archivo
+    var ts = new Date().toISOString().replace(/[:.]/g,'-');
+    var nombre = 'INV-' + (state.currentUser ? state.currentUser.bodega : 'FOTO') + '-' + ts + '.jpg';
+
+    // Subir con multipart a Drive API
+    var metadata = JSON.stringify({ name: nombre, parents: [DRIVE_FOLDER_ID] });
+    var form = new FormData();
+    form.append('metadata', new Blob([metadata], {type:'application/json'}));
+    form.append('file', blob);
+
+    var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + await getDriveToken() },
+      body: form
+    });
+
+    if(!res.ok){
+      var err = await res.text();
+      throw new Error('Drive error ' + res.status + ': ' + err);
+    }
+
+    var data = await res.json();
+    var fileId = data.id;
+
+    // Hacer el archivo público de lectura
+    await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '/permissions', {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + await getDriveToken(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role:'reader', type:'anyone' })
+    });
+
+    // URL directa de visualización
+    state.imagenUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
+    toast('Foto subida a Drive ✓', 'success');
+  } catch(ex){
+    toast('Error subiendo foto: ' + ex.message, 'error');
+    state.imagenUrl = '';
+  }
+}
+
+async function getDriveToken(){
+  // Obtener token OAuth2 desde el Apps Script (actúa como proxy de autenticación)
+  var res = await fetch(getScriptUrl() + '?action=getDriveToken', { method:'GET', redirect:'follow' });
+  var data = await res.json();
+  if(!data.token) throw new Error('No se pudo obtener token de Drive');
+  return data.token;
+}
+
 function quitarImagen(e){
   if(e) e.stopPropagation();
   state.imagenBase64 = '';
+  state.imagenUrl = '';
   document.getElementById('f-imagen').value = '';
   document.getElementById('img-preview').src = '';
   document.getElementById('img-preview').classList.remove('show');
