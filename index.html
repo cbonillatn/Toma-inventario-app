@@ -1268,7 +1268,7 @@ function guardarConfig(){
 
 
 // ── IMAGEN ──
-var DRIVE_FOLDER_ID = '19xQKkqkRpzWGmdlK66uL7K7w_1256j0_';
+// DRIVE_FOLDER_ID ya no se usa — imágenes van a ImgBB
 
 function onImageSelected(event){
   var file = event.target.files[0];
@@ -1303,10 +1303,14 @@ function onImageSelected(event){
   reader.readAsDataURL(file);
 }
 
+var IMGBB_API_KEY = '880357e1de3755b7f99f311a12e07065';
+
 async function subirImagenDrive(canvas, b64full){
   try {
-    // Comprimir a 600px, calidad 0.6 — balance entre calidad y tamaño
-    var maxSize = 600;
+    toast('Subiendo foto…', 'info');
+
+    // Comprimir a 800px calidad 0.75
+    var maxSize = 800;
     var w = canvas.width, h = canvas.height;
     var canvas2 = document.createElement('canvas');
     if(w > maxSize || h > maxSize){
@@ -1315,52 +1319,33 @@ async function subirImagenDrive(canvas, b64full){
     }
     canvas2.width = w; canvas2.height = h;
     canvas2.getContext('2d').drawImage(canvas, 0, 0, w, h);
-    var b64 = canvas2.toDataURL('image/jpeg', 0.6);
+    var b64 = canvas2.toDataURL('image/jpeg', 0.75).split(',')[1]; // solo datos sin prefijo
 
-    // Nombre único
+    // Subir a ImgBB — permite CORS desde cualquier dominio
+    var form = new FormData();
+    form.append('key', IMGBB_API_KEY);
+    form.append('image', b64);
+
     var ts = new Date().toISOString().replace(/[:.]/g,'-');
     var bodega = state.currentUser ? state.currentUser.bodega : 'FOTO';
-    var nombre = 'INV-' + bodega + '-' + ts + '.jpg';
+    form.append('name', 'INV-' + bodega + '-' + ts);
 
-    // Generar un ID único local para recuperar la URL después
-    var uploadId = 'img_' + Date.now();
-
-    // Enviar al script via POST no-cors (evita bloqueo CORS)
-    // El script sube a Drive y guarda la URL en una hoja temporal
-    var payload = JSON.stringify({
-      action: 'subirImagenDrive',
-      imagen: b64,
-      nombre: nombre,
-      uploadId: uploadId,
-      folderId: DRIVE_FOLDER_ID
-    });
-
-    // Primer intento: POST no-cors (no podemos leer respuesta)
-    fetch(getScriptUrl(), {
+    var res = await fetch('https://api.imgbb.com/1/upload', {
       method: 'POST',
-      mode: 'no-cors',
-      body: payload
+      body: form
     });
 
-    // Esperar 4 segundos y luego consultar la URL generada via GET normal
-    toast('Subiendo foto…', 'info');
-    await new Promise(function(r){ setTimeout(r, 4000); });
+    if(!res.ok) throw new Error('ImgBB error ' + res.status);
 
-    var res = await fetch(getScriptUrl() + '?action=getUploadUrl&uploadId=' + uploadId, {
-      method: 'GET', redirect: 'follow'
-    });
     var data = await res.json();
-
-    if(data.url){
-      state.imagenUrl = data.url;
-      toast('Foto subida a Drive ✓', 'success');
+    if(data.success){
+      state.imagenUrl = data.data.url;
+      toast('Foto subida ✓', 'success');
     } else {
-      // Fallback: guardar base64 comprimido directamente si Drive falló
-      state.imagenUrl = b64;
-      toast('Foto guardada localmente (Drive no disponible)', 'error');
+      throw new Error(data.error && data.error.message ? data.error.message : 'Error desconocido');
     }
   } catch(ex){
-    toast('Error: ' + ex.message, 'error');
+    toast('Error subiendo foto: ' + ex.message, 'error');
     state.imagenUrl = '';
   }
 }
