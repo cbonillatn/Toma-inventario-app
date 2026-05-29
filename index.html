@@ -1305,58 +1305,64 @@ function onImageSelected(event){
 
 async function subirImagenDrive(canvas, b64full){
   try {
-    // Convertir base64 a Blob
-    var arr = b64full.split(','), mime = 'image/jpeg';
-    var bstr = atob(arr[1]), n = bstr.length, u8 = new Uint8Array(n);
-    for(var i=0;i<n;i++) u8[i] = bstr.charCodeAt(i);
-    var blob = new Blob([u8], {type: mime});
-
-    // Nombre único para el archivo
-    var ts = new Date().toISOString().replace(/[:.]/g,'-');
-    var nombre = 'INV-' + (state.currentUser ? state.currentUser.bodega : 'FOTO') + '-' + ts + '.jpg';
-
-    // Subir con multipart a Drive API
-    var metadata = JSON.stringify({ name: nombre, parents: [DRIVE_FOLDER_ID] });
-    var form = new FormData();
-    form.append('metadata', new Blob([metadata], {type:'application/json'}));
-    form.append('file', blob);
-
-    var res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + await getDriveToken() },
-      body: form
-    });
-
-    if(!res.ok){
-      var err = await res.text();
-      throw new Error('Drive error ' + res.status + ': ' + err);
+    // Comprimir a 600px, calidad 0.6 — balance entre calidad y tamaño
+    var maxSize = 600;
+    var w = canvas.width, h = canvas.height;
+    var canvas2 = document.createElement('canvas');
+    if(w > maxSize || h > maxSize){
+      if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+      else      { w = Math.round(w * maxSize / h); h = maxSize; }
     }
+    canvas2.width = w; canvas2.height = h;
+    canvas2.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    var b64 = canvas2.toDataURL('image/jpeg', 0.6);
 
-    var data = await res.json();
-    var fileId = data.id;
+    // Nombre único
+    var ts = new Date().toISOString().replace(/[:.]/g,'-');
+    var bodega = state.currentUser ? state.currentUser.bodega : 'FOTO';
+    var nombre = 'INV-' + bodega + '-' + ts + '.jpg';
 
-    // Hacer el archivo público de lectura
-    await fetch('https://www.googleapis.com/drive/v3/files/' + fileId + '/permissions', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + await getDriveToken(), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role:'reader', type:'anyone' })
+    // Generar un ID único local para recuperar la URL después
+    var uploadId = 'img_' + Date.now();
+
+    // Enviar al script via POST no-cors (evita bloqueo CORS)
+    // El script sube a Drive y guarda la URL en una hoja temporal
+    var payload = JSON.stringify({
+      action: 'subirImagenDrive',
+      imagen: b64,
+      nombre: nombre,
+      uploadId: uploadId,
+      folderId: DRIVE_FOLDER_ID
     });
 
-    // URL directa de visualización
-    state.imagenUrl = 'https://drive.google.com/uc?export=view&id=' + fileId;
-    toast('Foto subida a Drive ✓', 'success');
+    // Primer intento: POST no-cors (no podemos leer respuesta)
+    fetch(getScriptUrl(), {
+      method: 'POST',
+      mode: 'no-cors',
+      body: payload
+    });
+
+    // Esperar 4 segundos y luego consultar la URL generada via GET normal
+    toast('Subiendo foto…', 'info');
+    await new Promise(function(r){ setTimeout(r, 4000); });
+
+    var res = await fetch(getScriptUrl() + '?action=getUploadUrl&uploadId=' + uploadId, {
+      method: 'GET', redirect: 'follow'
+    });
+    var data = await res.json();
+
+    if(data.url){
+      state.imagenUrl = data.url;
+      toast('Foto subida a Drive ✓', 'success');
+    } else {
+      // Fallback: guardar base64 comprimido directamente si Drive falló
+      state.imagenUrl = b64;
+      toast('Foto guardada localmente (Drive no disponible)', 'error');
+    }
   } catch(ex){
-    toast('Error subiendo foto: ' + ex.message, 'error');
+    toast('Error: ' + ex.message, 'error');
     state.imagenUrl = '';
   }
-}
-
-async function getDriveToken(){
-  // Obtener token OAuth2 desde el Apps Script (actúa como proxy de autenticación)
-  var res = await fetch(getScriptUrl() + '?action=getDriveToken', { method:'GET', redirect:'follow' });
-  var data = await res.json();
-  if(!data.token) throw new Error('No se pudo obtener token de Drive');
-  return data.token;
 }
 
 function quitarImagen(e){
