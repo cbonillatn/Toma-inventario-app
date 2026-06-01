@@ -413,15 +413,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Configuración heredada (manual)</div>
-        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Si no usas el selector de bodegas, puedes configurar manualmente el script y sheet activos aquí.</p>
+        <div class="card-title">Conexión al Script Maestro</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">URL del Script Maestro — esta URL nunca cambia. Es la base de toda la configuración centralizada.</p>
         <div class="config-item">
-          <div><div class="config-label">URL del Apps Script</div><div class="config-desc">Termina en /exec · Actualiza con cada nuevo deployment</div></div>
-          <input type="text" class="config-input" id="cfg-script-url">
+          <div><div class="config-label">URL Script Maestro</div><div class="config-desc">Termina en /exec · Solo cambia si recreas el script maestro</div></div>
+          <input type="text" class="config-input" id="cfg-maestro-url">
         </div>
         <div class="config-item">
-          <div><div class="config-label">URL del Google Sheet activo</div><div class="config-desc">Cambia aquí cada mes</div></div>
-          <input type="text" class="config-input" id="cfg-sheet-url">
+          <div><div class="config-label">URL Script Bodega actual</div><div class="config-desc">Se asigna automáticamente al iniciar sesión</div></div>
+          <input type="text" class="config-input" id="cfg-script-url" placeholder="Se carga automáticamente al hacer login">
         </div>
         <div style="margin-top:20px">
           <button class="btn btn-primary" onclick="guardarConfig()" style="width:auto">Guardar configuración</button>
@@ -561,11 +561,18 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 <div id="status-bar"></div>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1WS_FDBP0XJQTG4mRWQX0pMJXRaQLwwxUwcucR9oX-mUDmdSghinLLVvFf2uo4drD/exec';
-const SHEET_URL  = 'https://docs.google.com/spreadsheets/d/1cB7KaTUG-CnGM6dxkQCa74rIcmuLqsnyHG4DesaO4tE/';
+// ── SCRIPT MAESTRO — esta URL nunca cambia ──
+// Reemplaza con la URL /exec de tu Script Maestro después de desplegarlo
+const MAESTRO_URL = localStorage.getItem('cfg_maestroUrl') || 'PEGAR_URL_SCRIPT_MAESTRO_AQUI';
+const SCRIPT_URL  = MAESTRO_URL; // compatibilidad con código existente
+const SHEET_URL   = '';          // ya no se usa — viene del login
 
-function getScriptUrl(){ return localStorage.getItem('cfg_scriptUrl') || SCRIPT_URL; }
-function getSheetUrl() { return localStorage.getItem('cfg_sheetUrl')  || SHEET_URL; }
+function getMaestroUrl(){ return localStorage.getItem('cfg_maestroUrl') || MAESTRO_URL; }
+function getScriptUrl(){ 
+  // Post-login: usar script de la bodega. Pre-login: usar maestro
+  return localStorage.getItem('cfg_scriptUrl') || getMaestroUrl(); 
+}
+function getSheetUrl() { return localStorage.getItem('cfg_sheetUrl') || ''; }
 
 var state = {
   currentUser: null, productCache: {}, resumenData: [],
@@ -575,12 +582,20 @@ var state = {
   imagenUrl: ''       // URL de Drive (lo que se guarda en sheet)
 };
 
+// api() — operaciones de la bodega (buscarProducto, guardarConteo, etc.)
 async function api(action, payload){
   payload = payload || {};
-  // Siempre GET — CORS bloquea POST desde GitHub Pages hacia Apps Script
-  // La imagen ya viene comprimida y sin prefijo base64 (ver onImageSelected)
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
   var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
+  if (!res.ok) throw new Error('Error de red: ' + res.status);
+  return res.json();
+}
+
+// apiMaestro() — operaciones centrales (usuarios, bodegas, responsables, config)
+async function apiMaestro(action, payload){
+  payload = payload || {};
+  var params = new URLSearchParams(Object.assign({ action: action }, payload));
+  var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
   return res.json();
 }
@@ -716,7 +731,7 @@ async function agregarBodega(){
   try {
     toast('Guardando en servidor…','info');
     var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
-    var res = await fetch(getScriptUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
+    var res = await fetch(getMaestroUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
     var data = await res.json();
     if(data.success) toast('Bodega guardada y sincronizada ✓','success');
     else toast('Local ok · servidor: ' + data.message,'error');
@@ -733,22 +748,28 @@ async function doLogin(){
   errEl.style.display = 'none';
   try {
     var bodega = document.getElementById('l-bodega').value.trim().toUpperCase();
-    if(!bodega){ showLoginError('Selecciona una bodega'); btn.disabled=false; btn.innerHTML='<span>Ingresar</span><span>→</span>'; return; }
-    // Auto-apply script URL from selected bodega
-    onBodegaChange();
-    var data = await api('login', { usuario: usuario, pass: pass, bodega: bodega });
+    // El login siempre va al Script Maestro
+    var params = new URLSearchParams({ action:'login', usuario:usuario, pass:pass, bodega:bodega });
+    var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
+    if(!res.ok) throw new Error('Error de red: ' + res.status);
+    var data = await res.json();
     if (data.success){
       state.currentUser = data;
       state.bodega = data.bodega || '';
-      // Si el servidor retorna scriptUrl para la bodega, usarlo automáticamente
+      // Guardar script y sheet de la bodega para operaciones post-login
       if(data.scriptUrl){ localStorage.setItem('cfg_scriptUrl', data.scriptUrl); }
-      if(data.sheetUrl)  { localStorage.setItem('cfg_sheetUrl',  data.sheetUrl);  }
+      if(data.sheetUrl) { localStorage.setItem('cfg_sheetUrl',  data.sheetUrl);  }
+      // Aplicar config global recibida del maestro
+      if(data.config){
+        state.config = data.config;
+        if(data.config.mostrar_stock) localStorage.setItem('cfg_mostrarStock', data.config.mostrar_stock);
+      }
       document.getElementById('login-screen').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       applyRole(data.rol, data.nombre || data.usuario);
       initApp();
     } else { showLoginError(data.message || 'Credenciales incorrectas'); }
-  } catch(e){ showLoginError('Sin conexión al servidor. Verifica la URL del script en Config.'); }
+  } catch(e){ showLoginError('Sin conexión. Verifica la URL del Script Maestro en Config.'); }
   btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
 }
 function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
@@ -785,7 +806,7 @@ async function fetchBodegasRemoto(){
   var syncMsg = document.getElementById('login-sync-msg');
   if(syncMsg) syncMsg.style.display='block';
   try {
-    var res = await fetch(SCRIPT_URL + '?action=getBodegas', { method:'GET', redirect:'follow' });
+    var res = await fetch(getMaestroUrl() + '?action=getBodegas', { method:'GET', redirect:'follow' });
     if(!res.ok) return;
     var data = await res.json();
     if(data && data.bodegas && data.bodegas.length > 0){
@@ -1159,7 +1180,7 @@ async function cargarReporte(){
 // ── RESPONSABLES ──
 async function cargarResponsablesUI(){
   try {
-    var data=await api('getResponsables');
+    var data=await apiMaestro('getResponsables');
     var resp=data.responsables||[];
     var select=document.getElementById('f-responsable');
     select.innerHTML='<option value="">— Seleccionar —</option>';
@@ -1185,7 +1206,7 @@ async function agregarResponsable(){
   var nombre=input.value.trim();
   if(!nombre){ toast('Ingresa un nombre','error'); return; }
   try {
-    var data=await api('guardarResponsable',{ nombre:nombre });
+    var data=await apiMaestro('guardarResponsable',{ nombre:nombre });
     if(data.success){ toast('Responsable agregado ✓','success'); input.value=''; cargarResponsablesUI(); }
     else { toast(data.message,'error'); }
   } catch(e){ toast('Error de conexión','error'); }
@@ -1193,7 +1214,7 @@ async function agregarResponsable(){
 async function eliminarResponsable(nombre){
   if(!confirm('¿Eliminar a "'+nombre+'" de la lista?')) return;
   try {
-    var data=await api('eliminarResponsable',{ nombre:nombre });
+    var data=await apiMaestro('eliminarResponsable',{ nombre:nombre });
     if(data.success){ toast('Eliminado ✓','success'); cargarResponsablesUI(); }
     else toast(data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
@@ -1204,7 +1225,7 @@ async function cargarUsuarios(){
   var container=document.getElementById('users-table-body');
   container.innerHTML='<div style="padding:20px;text-align:center"><span class="spinner"></span></div>';
   try {
-    var data=await api('getUsuarios');
+    var data=await apiMaestro('getUsuarios');
     renderUsersTable(data.users||[]);
   } catch(e){ container.innerHTML='<p style="color:var(--danger);font-size:13px;padding:16px">Error: '+e.message+'</p>'; }
 }
@@ -1242,7 +1263,7 @@ async function guardarUsuarioModal(){
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
   try {
     var bodegaM=document.getElementById('m-bodega').value.trim().toUpperCase();
-    var data=await api('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo, bodega:bodegaM });
+    var data=await apiMaestro('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo, bodega:bodegaM });
     if(data.success){ toast('Usuario guardado ✓','success'); cerrarModalUsuario(); cargarUsuarios(); }
     else toast('Error: '+data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
@@ -1251,7 +1272,7 @@ async function guardarUsuarioModal(){
 async function confirmarEliminarUsuario(usuario){
   if(!confirm('¿Eliminar al usuario "'+usuario+'"?')) return;
   try {
-    var data=await api('eliminarUsuario',{ usuario:usuario });
+    var data=await apiMaestro('eliminarUsuario',{ usuario:usuario });
     if(data.success){ toast('Eliminado ✓','success'); cargarUsuarios(); }
     else toast('Error: '+data.message,'error');
   } catch(e){ toast('Error de conexión','error'); }
@@ -1259,10 +1280,18 @@ async function confirmarEliminarUsuario(usuario){
 document.getElementById('modal-usuario').addEventListener('click', function(e){ if(e.target===this) cerrarModalUsuario(); });
 
 // ── CONFIG ──
-function cargarConfigUI(){ document.getElementById('cfg-script-url').value=getScriptUrl(); document.getElementById('cfg-sheet-url').value=getSheetUrl(); renderBodegasLista(); }
+function cargarConfigUI(){
+  var mUrl = document.getElementById('cfg-maestro-url');
+  if(mUrl) mUrl.value = getMaestroUrl();
+  var sUrl = document.getElementById('cfg-script-url');
+  if(sUrl) sUrl.value = localStorage.getItem('cfg_scriptUrl') || '';
+  renderBodegasLista();
+}
 function guardarConfig(){
-  localStorage.setItem('cfg_scriptUrl', document.getElementById('cfg-script-url').value.trim());
-  localStorage.setItem('cfg_sheetUrl',  document.getElementById('cfg-sheet-url').value.trim());
+  var mu = document.getElementById('cfg-maestro-url');
+  var su = document.getElementById('cfg-script-url');
+  if(mu && mu.value.trim()) localStorage.setItem('cfg_maestroUrl', mu.value.trim());
+  if(su && su.value.trim()) localStorage.setItem('cfg_scriptUrl',  su.value.trim());
   toast('Configuración guardada ✓','success');
 }
 
