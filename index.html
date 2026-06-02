@@ -202,6 +202,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
           <span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>
         </div>
 
+        <!-- Aviso duplicado -->
+        <div id="aviso-duplicado" style="display:none;background:#2a1a00;border:1px solid var(--warn);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:#f59e0b;margin-bottom:12px;line-height:1.5"></div>
         <!-- Stock box (visible solo si toggle activo) -->
         <div class="stock-box" id="stock-box" style="display:none">
           <div>
@@ -839,8 +841,9 @@ function applyRole(role, nombre){
   var chip = document.getElementById('ui-role-chip');
   chip.className = 'role-chip role-' + role; chip.textContent = role;
   document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = role==='admin' ? '' : 'none'; });
-  // Toggle stock solo admin
-  document.getElementById('stock-toggle-wrap').style.display = role==='admin' ? 'block' : 'none';
+  // Toggle stock: visible para todos, editable solo por admin
+  document.getElementById('stock-toggle-wrap').style.display = 'block';
+  document.getElementById('toggle-stock').disabled = (role !== 'admin');
   if (role==='lector'){
     document.getElementById('btn-guardar').disabled=true;
     document.getElementById('btn-guardar').style.opacity='.4';
@@ -852,31 +855,55 @@ function applyRole(role, nombre){
 async function initApp(){
   cargarResponsablesUI();
   cargarConfigUI();
-  // Mostrar bodega en topbar (ya viene del login)
+  // Mostrar bodega en topbar
   if(state.bodega){
     var el = document.getElementById('bodega-topbar');
     el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
   }
-  // Cargar URL del Sheet desde hoja RESPONSABLES col D
+  // Leer config global del Maestro (mostrar_stock, aviso_duplicado)
   try {
-    var cfgData = await api('getConfig');
-    if(cfgData.sheetUrl && cfgData.sheetUrl !== ''){
-      localStorage.setItem('cfg_sheetUrl', cfgData.sheetUrl);
+    var cfgData = await apiMaestro('getConfig');
+    if(cfgData.config){
+      var cfg = cfgData.config;
+      // Aplicar mostrar_stock globalmente
+      var mostrarStock = cfg.mostrar_stock === 'SI';
+      state.mostrarStock = mostrarStock;
+      var toggleEl = document.getElementById('toggle-stock');
+      if(toggleEl) toggleEl.checked = mostrarStock;
+      // Guardar en state para aviso duplicado
+      state.avisoDuplicado = cfg.aviso_duplicado !== 'NO';
     }
-  } catch(e){ console.warn('No se pudo cargar config del sheet'); }
+  } catch(e){ 
+    // Fallback: leer de localStorage si el maestro no responde
+    state.mostrarStock = localStorage.getItem('cfg_mostrarStock') === 'SI';
+    var toggleEl = document.getElementById('toggle-stock');
+    if(toggleEl) toggleEl.checked = state.mostrarStock;
+    state.avisoDuplicado = true;
+  }
   setTimeout(function(){ document.getElementById('codigo-input').focus(); }, 200);
 }
 
 // ── TOGGLE STOCK ──
-function toggleStock(activo){
+async function toggleStock(activo){
   state.mostrarStock = activo;
-  // Si hay producto activo, mostrar/ocultar stock
+  // Mostrar/ocultar stock box según estado
   var box = document.getElementById('stock-box');
-  if (!activo){ box.style.display='none'; return; }
-  var codigo = document.getElementById('codigo-input').value.trim();
-  if (codigo && state.productCache[codigo]) {
-    document.getElementById('stock-value').textContent = state.productCache[codigo].stock !== undefined ? state.productCache[codigo].stock : '—';
-    box.style.display = 'flex';
+  if(!activo){ box.style.display='none'; }
+  else {
+    var codigo = document.getElementById('codigo-input').value.trim();
+    if(codigo && state.productCache[codigo]){
+      document.getElementById('stock-value').textContent = state.productCache[codigo].stock !== undefined ? state.productCache[codigo].stock : '—';
+      box.style.display = 'flex';
+    }
+  }
+  // Solo admin puede guardar cambio global en el Maestro
+  if(state.currentUser && state.currentUser.rol === 'admin'){
+    try {
+      await apiMaestro('guardarConfig', { clave:'mostrar_stock', valor: activo ? 'SI' : 'NO' });
+      toast('Config global actualizada — aplica a todos los usuarios ✓', 'success');
+    } catch(e){
+      toast('No se pudo guardar en el Maestro','error');
+    }
   }
 }
 
@@ -922,6 +949,7 @@ async function buscarProducto(){
   }
   if(state.productCache[codigo]){
     mostrarProducto(codigo, state.productCache[codigo].descripcion, state.productCache[codigo].stock);
+    verificarDuplicado(codigo);
     return;
   }
   preview.className='product-preview';
@@ -931,6 +959,7 @@ async function buscarProducto(){
     if(data.found){
       state.productCache[codigo] = { descripcion: data.descripcion, stock: data.stock };
       mostrarProducto(codigo, data.descripcion, data.stock);
+      verificarDuplicado(codigo);
     } else {
       preview.className='product-preview not-found';
       preview.innerHTML='<span class="product-name" style="color:var(--danger)">⚠ Código <b>'+codigo+'</b> no encontrado en INV VALORIZADO</span><span class="product-status status-notfound">No en bodega</span>';
@@ -939,6 +968,22 @@ async function buscarProducto(){
     preview.className='product-preview not-found';
     preview.innerHTML='<span style="color:var(--danger);font-size:13px">Error de conexión.</span>';
   }
+}
+
+// ── VERIFICAR DUPLICADO ──
+async function verificarDuplicado(codigo){
+  if(!state.avisoDuplicado) return;
+  var avisoEl = document.getElementById('aviso-duplicado');
+  if(!avisoEl) return;
+  avisoEl.style.display = 'none';
+  try {
+    var data = await api('verificarDuplicado', { codigo: codigo });
+    if(data.encontrado){
+      avisoEl.innerHTML = '⚠ Este código ya fue ingresado por <strong>' + (data.usuario || 'otro usuario') + '</strong>'
+        + (data.fecha ? ' el ' + data.fecha : '') + '. Puedes guardar igualmente.';
+      avisoEl.style.display = 'block';
+    }
+  } catch(e){ /* silencioso */ }
 }
 function mostrarProducto(codigo, desc, stock){
   var p = document.getElementById('product-preview');
@@ -1005,6 +1050,7 @@ function limpiarFormulario(){
   ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('field-error'); });
   ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
   state.seriesIngresadas=[]; state.formActual={}; state.imagenBase64=''; state.imagenUrl='';
+  var av=document.getElementById('aviso-duplicado'); if(av) av.style.display='none';
   quitarImagen(null);
   document.getElementById('codigo-input').focus();
 }
