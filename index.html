@@ -539,9 +539,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 <!-- MODAL CONFIG BODEGA (desde login) -->
 <div class="modal-overlay" id="modal-cfg-bodega">
   <div class="modal" style="width:480px;max-width:95vw">
-    <div class="modal-title" style="margin-bottom:4px">⚙ Configurar bodegas</div>
-    <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Agrega o edita las bodegas disponibles en el login.</p>
-    <div id="mb-lista" style="margin-bottom:16px;max-height:180px;overflow-y:auto"></div>
+    <div class="modal-title" style="margin-bottom:4px">⚙ Configurar sistema</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px">URL Script Maestro</div>
+      <p style="font-size:12px;color:var(--text2);margin:0 0 10px;font-family:var(--mono)">URL central que nunca cambia. Se configura una sola vez.</p>
+      <input type="text" id="mb-maestro" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:10px;font-size:12px">
+      <button class="btn btn-primary" onclick="guardarMaestroUrl()" style="width:auto;font-size:12px">Guardar URL Maestro</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;font-family:var(--mono)">Bodegas disponibles en el login:</p>
+    <div id="mb-lista" style="margin-bottom:16px;max-height:160px;overflow-y:auto"></div>
     <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
       <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px">Agregar bodega</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
@@ -638,7 +644,19 @@ function onBodegaChange(){
 // Modal config bodega desde login
 function mostrarConfigBodega(){
   renderMbLista();
+  // Pre-cargar URL maestro si ya existe
+  var mInput = document.getElementById('mb-maestro');
+  if(mInput) mInput.value = getMaestroUrl() !== 'PEGAR_URL_SCRIPT_MAESTRO_AQUI' ? getMaestroUrl() : '';
   document.getElementById('modal-cfg-bodega').classList.add('open');
+}
+
+function guardarMaestroUrl(){
+  var val = document.getElementById('mb-maestro').value.trim();
+  if(!val){ toast('Ingresa la URL del Script Maestro','error'); return; }
+  if(!val.includes('script.google.com')){ toast('La URL no parece válida','error'); return; }
+  localStorage.setItem('cfg_maestroUrl', val);
+  toast('URL Maestro guardada ✓ — recargando...','success');
+  setTimeout(function(){ location.reload(); }, 1200);
 }
 function cerrarModalCfgBodega(){
   document.getElementById('modal-cfg-bodega').classList.remove('open');
