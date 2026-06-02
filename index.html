@@ -1,859 +1,1668 @@
-// ══════════════════════════════════════════════════════════════════
-//  BQEF · Inventario Físico — Google Apps Script
-// ══════════════════════════════════════════════════════════════════
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BQEF · Inventario Físico</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a0e1a;--surface:#111827;--surface2:#1c2537;--border:#2a3548;--accent:#00e5a0;--accent2:#0096ff;--danger:#ff4757;--warn:#ffa502;--text:#e8edf5;--text2:#7a8ba8;--mono:'Space Mono',monospace;--sans:'DM Sans',sans-serif;--radius:10px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,229,160,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,160,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+#login-screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:48px 40px;width:360px;position:relative;overflow:hidden}
+.login-card::before{content:'';position:absolute;top:-60px;right:-60px;width:180px;height:180px;background:radial-gradient(circle,rgba(0,229,160,.15),transparent 70%);pointer-events:none}
+.login-logo{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--accent);text-transform:uppercase;margin-bottom:8px}
+.login-title{font-size:24px;font-weight:600;margin-bottom:32px;line-height:1.2}.login-title span{color:var(--accent)}
+label{display:block;font-size:11px;font-family:var(--mono);letter-spacing:.12em;color:var(--text2);text-transform:uppercase;margin-bottom:6px}
+input[type=text],input[type=password],input[type=number],select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--sans);font-size:15px;padding:11px 14px;outline:none;transition:border-color .2s;margin-bottom:20px}
+input:focus,select:focus{border-color:var(--accent)}
+input:disabled,select:disabled{opacity:.4;cursor:not-allowed}
+input.field-error{border-color:var(--danger)!important;background:rgba(255,71,87,.05)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:12px 22px;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--mono);font-size:13px;letter-spacing:.05em;transition:all .2s;text-transform:uppercase;font-weight:700}
+.btn-primary{background:var(--accent);color:#0a0e1a;width:100%}.btn-primary:hover{background:#00ffb3;transform:translateY(-1px)}.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(255,71,87,.15);color:var(--danger);border:1px solid rgba(255,71,87,.3)}.btn-danger:hover{background:rgba(255,71,87,.25)}
+.btn-warn{background:rgba(255,165,2,.15);color:var(--warn);border:1px solid rgba(255,165,2,.3)}.btn-warn:hover{background:rgba(255,165,2,.25)}
+.btn-sm{padding:7px 14px;font-size:11px}
+#app{display:none;position:relative;z-index:1;min-height:100vh}
+.topbar{position:sticky;top:0;z-index:50;background:rgba(10,14,26,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between}
+.topbar-brand{font-family:var(--mono);font-size:13px;letter-spacing:.15em;color:var(--accent);text-transform:uppercase}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.user-badge{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text2)}
+.role-chip{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.1em}
+.role-admin{background:rgba(0,229,160,.15);color:var(--accent)}.role-editor{background:rgba(0,150,255,.15);color:var(--accent2)}.role-lector{background:rgba(122,139,168,.15);color:var(--text2)}
+.main{max-width:960px;margin:0 auto;padding:32px 24px}
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:6px;margin-bottom:28px}
+.tab-btn{flex:1;background:none;border:none;border-radius:8px;color:var(--text2);cursor:pointer;font-family:var(--mono);font-size:11px;letter-spacing:.1em;padding:10px;text-transform:uppercase;transition:all .2s}
+.tab-btn.active{background:var(--surface2);color:var(--accent);border:1px solid var(--border)}.tab-btn:hover:not(.active){color:var(--text)}
+.panel{display:none}.panel.active{display:block;animation:fadeUp .3s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px}
+.card-title{font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.card-title::before{content:'';display:block;width:3px;height:14px;background:var(--accent);border-radius:2px}
+.scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:16px}
+.scan-input-wrap{position:relative}.scan-input-wrap input{font-family:var(--mono);font-size:18px;padding:14px 48px 14px 16px;margin-bottom:0}
+.scan-icon{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--text2);font-size:20px}
+.product-preview{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;min-height:52px;display:flex;align-items:center;transition:all .3s}
+.product-preview.found{border-color:var(--accent)}.product-preview.not-found{border-color:var(--danger)}
+.product-name{font-weight:500;font-size:15px;flex:1}
+.product-status{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.1em;padding:4px 10px;border-radius:20px}
+.status-found{background:rgba(0,229,160,.15);color:var(--accent)}.status-notfound{background:rgba(255,71,87,.15);color:var(--danger)}
+/* STOCK BOX */
+.stock-box{background:var(--surface2);border:1px solid var(--accent2);border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.stock-label{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.stock-value{font-family:var(--mono);font-size:22px;color:var(--accent2);font-weight:700}
+/* TOGGLE STOCK */
+.stock-toggle-row{display:flex;align-items:center;gap:10px;margin-bottom:16px;padding:10px 14px;background:var(--surface2);border-radius:var(--radius);border:1px solid var(--border)}
+.stock-toggle-label{font-size:13px;color:var(--text2);flex:1}
+.toggle{position:relative;display:inline-block;width:40px;height:22px}.toggle input{opacity:0;width:0;height:0}
+.toggle-slider{position:absolute;cursor:pointer;inset:0;background:var(--border);border-radius:22px;transition:.3s}
+.toggle-slider:before{position:absolute;content:'';height:16px;width:16px;left:3px;bottom:3px;background:var(--text2);border-radius:50%;transition:.3s}
+.toggle input:checked+.toggle-slider{background:var(--accent)}.toggle input:checked+.toggle-slider:before{transform:translateX(18px);background:#0a0e1a}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column}.form-group label{margin-bottom:6px}.form-group input,.form-group select{margin-bottom:0}
+.field-hint{font-size:11px;color:var(--danger);font-family:var(--mono);margin-top:4px;display:none}.field-hint.show{display:block}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--text2);padding:10px 12px;text-align:left;border-bottom:1px solid var(--border)}
+td{padding:11px 12px;border-bottom:1px solid rgba(42,53,72,.5);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)}
+.code-cell{font-family:var(--mono);font-size:12px;color:var(--accent2)}
+.stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.stat-num{font-family:var(--mono);font-size:32px;color:var(--accent);display:block;line-height:1;margin-bottom:6px}
+.stat-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;font-family:var(--mono)}
+/* REPORTE DIFERENCIAS */
+.dif-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+.dif-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:20px}
+.dif-card.highlight{border-color:var(--accent)}
+.dif-card.danger{border-color:var(--danger)}
+.dif-card.warn{border-color:var(--warn)}
+.dif-card.info{border-color:var(--accent2)}
+.dif-label{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.dif-value{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--text)}
+.dif-card.highlight .dif-value{color:var(--accent)}
+.dif-card.danger .dif-value{color:var(--danger)}
+.dif-card.warn .dif-value{color:var(--warn)}
+.dif-card.info .dif-value{color:var(--accent2)}
+.config-item{display:flex;align-items:center;justify-content:space-between;padding:16px 0;border-bottom:1px solid var(--border)}.config-item:last-child{border-bottom:none}
+.config-label{font-weight:500;font-size:14px}.config-desc{font-size:12px;color:var(--text2);margin-top:2px}
+.config-input{width:300px;margin-bottom:0;font-size:13px}
+.user-table-row{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid rgba(42,53,72,.4)}.user-table-row:last-child{border-bottom:none}
+.user-table-header{display:grid;grid-template-columns:1fr 1fr 110px 80px auto auto;gap:10px;padding:0 0 8px 0;border-bottom:1px solid var(--border);margin-bottom:4px}
+.user-table-header span{font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+#series-panel{display:none;position:fixed;inset:0;background:var(--bg);z-index:200;overflow-y:auto}
+#series-panel.open{display:block}
+.series-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.series-main{max-width:700px;margin:0 auto;padding:32px 24px}
+.series-badge{background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.series-badge-code{font-family:var(--mono);font-size:16px;color:var(--accent)}
+.serie-scan-row{display:grid;grid-template-columns:1fr auto;gap:12px;margin-bottom:20px}
+.serie-scan-row input{font-family:var(--mono);font-size:16px;margin-bottom:0}
+.series-log{display:flex;flex-direction:column;gap:8px;margin-bottom:24px}
+.serie-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.serie-item.ok{border-color:var(--accent)}.serie-item.forced{border-color:var(--warn)}.serie-item.error-item{border-color:var(--danger)}.serie-item.duplicate{border-color:var(--warn);background:rgba(255,165,2,.05)}
+.serie-num{font-family:var(--mono);font-size:14px}
+.serie-status{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;text-transform:uppercase;white-space:nowrap}
+.serie-ok{background:rgba(0,229,160,.15);color:var(--accent)}.serie-forced{background:rgba(255,165,2,.15);color:var(--warn)}.serie-error{background:rgba(255,71,87,.15);color:var(--danger)}.serie-dup{background:rgba(255,165,2,.15);color:var(--warn)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:400;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;width:420px;max-width:90vw}
+.modal-icon{font-size:32px;margin-bottom:12px;display:block}.modal-title{font-size:18px;font-weight:600;margin-bottom:8px}
+.modal-desc{font-size:13px;color:var(--text2);margin-bottom:24px;line-height:1.6}
+.modal-actions{display:flex;gap:10px}.modal-actions .btn{width:auto;flex:1}
+#status-bar{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:40px;padding:12px 24px;font-size:13px;font-family:var(--mono);display:flex;align-items:center;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.4);transition:all .4s cubic-bezier(.34,1.56,.64,1);opacity:0;pointer-events:none;z-index:500;white-space:nowrap}
+#status-bar.show{opacity:1;pointer-events:auto}
+#status-bar.success{border-color:var(--accent);color:var(--accent)}#status-bar.error{border-color:var(--danger);color:var(--danger)}#status-bar.loading{border-color:var(--accent2);color:var(--accent2)}
+.spinner{width:14px;height:14px;border:2px solid currentColor;border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;display:inline-block}
+@keyframes spin{to{transform:rotate(360deg)}}
+.divider{height:1px;background:var(--border);margin:20px 0}
+.empty{text-align:center;padding:40px;color:var(--text2);font-size:13px;font-family:var(--mono);letter-spacing:.1em}
 
-var SHEET_RESUMEN      = 'RESUMEN INVENTARIO';
-var SHEET_VALORIZADO   = 'INV VALORIZADO';
-var SHEET_USUARIOS     = 'USUARIOS';
-var SHEET_RESPONSABLES = 'RESPONSABLES';
-var SHEET_SERIES       = 'SERIES';
-var SHEET_DIFERENCIAS  = 'DETALLE DIFERENCIAS';
-var SHEET_BODEGAS      = 'BODEGAS';   // ← nueva hoja central de bodegas
+/* IMAGEN */
+.img-upload-wrap{background:var(--surface2);border:2px dashed var(--border);border-radius:var(--radius);padding:20px;text-align:center;cursor:pointer;transition:all .2s;position:relative}
+.img-upload-wrap:hover{border-color:var(--accent)}
+.img-upload-wrap input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.img-upload-wrap.has-img{border-style:solid;border-color:var(--accent)}
+.img-preview{width:100%;max-height:180px;object-fit:cover;border-radius:8px;display:none;margin-top:10px}
+.img-preview.show{display:block}
+.img-upload-label{font-family:var(--mono);font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em}
+.img-btns{display:flex;gap:8px;margin-top:10px;justify-content:center}
 
-var COL_CODIGO      = 2;
-var COL_CONTEO      = 4;
-var COL_UBICACION   = 9;
-var COL_RESPONSABLE = 15;
-var COL_USUARIO_LOG = 16;
-var COL_FECHA       = 17;
-var COL_USUARIO_U   = 21;
-var COL_IMAGEN      = 11;
+@media(max-width:600px){.form-grid,.dif-grid,.stats-row{grid-template-columns:1fr}.login-card{width:100%;margin:16px;padding:32px 24px}.config-input{width:100%}.config-item{flex-direction:column;align-items:flex-start;gap:10px}.user-table-row,.user-table-header{grid-template-columns:1fr 1fr}.serie-scan-row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
 
-var VAL_COD   = 1;
-var VAL_DESC  = 2;
-var VAL_STOCK = 3;
+<div id="login-screen">
+  <div class="login-card">
+    <p class="login-logo">◈ Sistema Inventario</p>
+    <h1 class="login-title">Inventario<br><span>Físico</span> 2026</h1>
+    <p id="login-sync-msg" style="font-size:11px;color:var(--accent2);font-family:var(--mono);margin-bottom:8px;display:none">⟳ Sincronizando bodegas…</p>
+    <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
+    <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
+    <label>Bodega</label>
+    <select id="l-bodega" style="margin-bottom:20px">
+      <option value="">— Selecciona una bodega —</option>
+    </select>
+    <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
+    <p style="margin-top:12px;font-size:11px;color:var(--text2);text-align:center;font-family:var(--mono);cursor:pointer" onclick="mostrarConfigBodega()">⚙ Configurar bodegas</p>
+    <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
+  </div>
+</div>
 
-var U_USER   = 1;
-var U_PASS   = 2;
-var U_ROL    = 3;
-var U_ACTIVO = 4;
-var U_NOMBRE  = 5;
-var U_BODEGA  = 6;
+<div id="app">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="topbar-brand">◈ BQEF · Inventario</span>
+      <span id="bodega-topbar" style="font-family:var(--mono);font-size:11px;color:var(--accent2);display:none"></span>
+    </div>
+    <div class="topbar-right">
+      <div class="user-badge"><span id="ui-nombre"></span><span class="role-chip" id="ui-role-chip"></span></div>
+      <button class="btn btn-secondary" style="padding:8px 14px;font-size:11px" onclick="doLogout()">Salir</button>
+    </div>
+  </div>
 
-var S_CODIGO       = 1;
-var S_DESC         = 2;
-var S_SERIE        = 3;
-var S_BODEGA       = 4;
-var S_SERIE_FISICA = 5;
+  <div class="main">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="ingresar" onclick="switchTab(this)">▪ Registrar</button>
+      <button class="tab-btn" data-tab="resumen" onclick="switchTab(this)">▪ Resumen</button>
+      <button class="tab-btn" data-tab="reporte" onclick="switchTab(this)">▪ Reporte</button>
+      <button class="tab-btn admin-only" data-tab="usuarios" onclick="switchTab(this)" style="display:none">▪ Usuarios</button>
+      <button class="tab-btn admin-only" data-tab="informe" onclick="switchTab(this)" style="display:none">▪ Informe</button>
+      <button class="tab-btn admin-only" data-tab="config" onclick="switchTab(this)" style="display:none">▪ Config.</button>
+    </div>
 
-// BODEGAS columns
-var B_CODIGO     = 1;  // A: código ej BQEF
-var B_LABEL      = 2;  // B: nombre visible
-var B_SCRIPT_URL = 3;  // C: URL /exec del script
-var B_SHEET_URL  = 4;  // D: URL del sheet activo
+    <!-- REGISTRAR -->
+    <div class="panel active" id="tab-ingresar">
+      <!-- Toggle stock (solo admin) -->
+      <div id="stock-toggle-wrap" style="display:none" class="card" style="padding:14px">
+        <div class="stock-toggle-row">
+          <span class="stock-toggle-label">📦 Mostrar stock total al escanear</span>
+          <label class="toggle">
+            <input type="checkbox" id="toggle-stock" onchange="toggleStock(this.checked)">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
 
-function doGet(e) {
-  // Protección para ejecución manual desde el editor (e puede ser undefined)
-  if (!e || !e.parameter) {
-    return buildResponse({ error: 'Ejecuta desde el navegador, no desde el editor. Usa la URL /exec' });
-  }
-  var action = e.parameter.action || '';
-  try {
-    var result;
-    switch (action) {
-      case 'buscarProducto':      result = buscarProducto(e.parameter.codigo);                                       break;
-      case 'guardarConteo':       result = guardarConteo(e.parameter);                                               break;
-      case 'getResumen':          result = getResumen();                                                              break;
-      case 'login':               result = login(e.parameter);                                                       break;
-      case 'getUsuarios':         result = getUsuarios();                                                            break;
-      case 'guardarUsuario':      result = guardarUsuario(e.parameter);                                              break;
-      case 'eliminarUsuario':     result = eliminarUsuario(e.parameter.usuario);                                     break;
-      case 'getResponsables':     result = getResponsables();                                                        break;
-      case 'guardarResponsable':  result = guardarResponsable(e.parameter.nombre);                                   break;
-      case 'eliminarResponsable': result = eliminarResponsable(e.parameter.nombre);                                  break;
-      case 'getBodega':           result = getBodegaDeSheet();                                                       break;
-      case 'validarSerie':        result = validarSerie(e.parameter.codigo, e.parameter.serie, e.parameter.bodega);  break;
-      case 'guardarSerieFisica':  result = guardarSerieFisica(e.parameter);                                          break;
-      case 'getSeriesPorCodigo':  result = getSeriesPorCodigo(e.parameter.codigo, e.parameter.bodega);              break;
-      case 'getDiferencias':      result = getDiferencias();                                                         break;
-      case 'verificarDuplicado':  result = verificarDuplicado(e.parameter.codigo);                                  break;
-      case 'getResumenCompleto':  result = getResumenCompleto();                                                   break;
-      case 'initSheets':          result = initSheets();                                                             break;
-      case 'getConfig':           result = getConfig();                                                              break;
-      case 'getDriveToken':       result = getDriveToken();                                                          break;
-      case 'getUploadUrl':        result = getUploadUrl(e.parameter.uploadId);                                      break;
-      case 'getBodegas':          result = getBodegas();                                                             break;  // ← NUEVA
-      case 'guardarBodega':       result = guardarBodega(e.parameter);                                              break;  // ← NUEVA
-      case 'eliminarBodega':      result = eliminarBodega(e.parameter.codigo);                                       break;  // ← NUEVA
-      default: result = { error: 'Accion no reconocida: ' + action };
-    }
-    return buildResponse(result);
-  } catch (err) {
-    return buildResponse({ error: err.message });
+      <div class="card">
+        <div class="card-title">Escanear / Ingresar Código NAF</div>
+        <div class="scan-row">
+          <div class="scan-input-wrap">
+            <input type="text" id="codigo-input" placeholder="Escanea o escribe el CÓDIGO NAF" autocomplete="off" autocorrect="off" oninput="onCodigoInput()" onkeydown="if(event.key==='Enter') buscarProducto()">
+            <span class="scan-icon">⌗</span>
+          </div>
+          <button class="btn btn-secondary" onclick="buscarProducto()">Buscar</button>
+        </div>
+
+        <!-- Verificación producto -->
+        <div class="product-preview" id="product-preview">
+          <span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>
+        </div>
+
+        <!-- Aviso duplicado -->
+        <div id="aviso-duplicado" style="display:none;background:#2a1a00;border:1px solid var(--warn);border-radius:var(--radius);padding:10px 14px;font-size:13px;color:#f59e0b;margin-bottom:12px;line-height:1.5"></div>
+        <!-- Stock box (visible solo si toggle activo) -->
+        <div class="stock-box" id="stock-box" style="display:none">
+          <div>
+            <div class="stock-label">Stock total en sistema</div>
+            <div class="stock-value" id="stock-value">—</div>
+          </div>
+          <span style="font-size:28px">📦</span>
+        </div>
+
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Conteo <span style="color:var(--danger)">*</span></label>
+            <input type="number" id="f-conteo" min="0" placeholder="0" oninput="limpiarError('f-conteo','hint-conteo')">
+            <span class="field-hint" id="hint-conteo">Campo obligatorio</span>
+          </div>
+          <div class="form-group">
+            <label>Ubicación <span style="color:var(--danger)">*</span></label>
+            <input type="text" id="f-ubicacion" placeholder="Ej: A-03-2" oninput="limpiarError('f-ubicacion','hint-ubicacion')">
+            <span class="field-hint" id="hint-ubicacion">Campo obligatorio</span>
+          </div>
+          <div class="form-group">
+            <label>Responsable <span style="color:var(--danger)">*</span></label>
+            <select id="f-responsable" onchange="limpiarError('f-responsable','hint-responsable')">
+              <option value="">— Seleccionar —</option>
+            </select>
+            <span class="field-hint" id="hint-responsable">Campo obligatorio</span>
+          </div>
+          <div class="form-group">
+            <label>Series <span style="color:var(--text2);font-size:10px">(opcional)</span></label>
+            <input type="text" id="f-series-display" placeholder="Se ingresarán al guardar" readonly style="cursor:not-allowed;opacity:.6">
+          </div>
+          <div class="form-group full" style="grid-column:1/-1">
+            <label>Foto del artículo <span style="color:var(--text2);font-size:10px">(opcional)</span></label>
+            <div class="img-upload-wrap" id="img-upload-wrap">
+              <input type="file" id="f-imagen" accept="image/*" capture="environment" onchange="onImageSelected(event)">
+              <div id="img-placeholder">
+                <div style="font-size:28px;margin-bottom:8px">📷</div>
+                <div class="img-upload-label">Toca para tomar foto o seleccionar imagen</div>
+              </div>
+              <img id="img-preview" class="img-preview" alt="Vista previa">
+              <div class="img-btns" id="img-btns" style="display:none">
+                <button type="button" class="btn btn-danger btn-sm" onclick="quitarImagen(event)">✕ Quitar foto</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-primary" id="btn-guardar" onclick="iniciarGuardado()">Guardar Registro ↗</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Registros de esta sesión</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Usuario</th><th>Series</th><th>Estado</th></tr></thead>
+            <tbody id="session-log"></tbody>
+          </table>
+          <div class="empty" id="session-empty">Sin registros aún</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESUMEN -->
+    <div class="panel" id="tab-resumen">
+      <div class="stats-row">
+        <div class="stat-card"><span class="stat-num" id="stat-total">—</span><span class="stat-label">Total registros</span></div>
+        <div class="stat-card"><span class="stat-num" id="stat-hoy">—</span><span class="stat-label">Contados hoy</span></div>
+        <div class="stat-card"><span class="stat-num" id="stat-resp">—</span><span class="stat-label">Responsables</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Inventario registrado</div>
+        <div style="margin-bottom:16px;display:flex;gap:10px">
+          <input type="text" id="filtro-input" placeholder="Filtrar por código o descripción…" style="margin-bottom:0;flex:1" oninput="filtrarTabla()">
+          <button class="btn btn-secondary" onclick="cargarResumen()">↻ Actualizar</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Código NAF</th><th>Descripción</th><th>Conteo</th><th>Ubicación</th><th>Responsable</th><th>Usuario</th><th>Fecha</th></tr></thead>
+            <tbody id="resumen-body"></tbody>
+          </table>
+          <div class="empty" id="resumen-empty" style="display:none">Sin datos</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REPORTE DIFERENCIAS -->
+    <div class="panel" id="tab-reporte">
+      <div class="card">
+        <div class="card-title" style="justify-content:space-between">
+          <span style="display:flex;align-items:center;gap:8px"><span style="width:3px;height:14px;background:var(--accent);border-radius:2px;display:block"></span>Reporte de diferencias</span>
+          <button class="btn btn-secondary btn-sm" onclick="cargarReporte()">↻ Actualizar</button>
+        </div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)">Datos en tiempo real desde la hoja DETALLE DIFERENCIAS</p>
+
+        <!-- Fila 1: Avance general -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Avance del inventario</div>
+        <div class="dif-grid" style="margin-bottom:24px">
+          <div class="dif-card highlight">
+            <div class="dif-label">Total ítems existentes</div>
+            <div class="dif-value" id="d-totalExistencia">—</div>
+          </div>
+          <div class="dif-card highlight">
+            <div class="dif-label">Total ítems contados</div>
+            <div class="dif-value" id="d-totalConteo">—</div>
+          </div>
+          <div class="dif-card info">
+            <div class="dif-label">% Avance</div>
+            <div class="dif-value" id="d-avance">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">No contados</div>
+            <div class="dif-value" id="d-noContados">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Ítems por revisar</div>
+            <div class="dif-value" id="d-porRevisar">—</div>
+          </div>
+        </div>
+
+        <!-- Fila 2: Valores -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Valorización</div>
+        <div class="dif-grid" style="margin-bottom:24px">
+          <div class="dif-card info">
+            <div class="dif-label">Valor total inventario</div>
+            <div class="dif-value" id="d-valorInventario">—</div>
+          </div>
+          <div class="dif-card info">
+            <div class="dif-label">Valor total conteo</div>
+            <div class="dif-value" id="d-valorConteo">—</div>
+          </div>
+        </div>
+
+        <!-- Fila 3: Diferencias -->
+        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Diferencias</div>
+        <div class="dif-grid">
+          <div class="dif-card danger">
+            <div class="dif-label">Ítems faltantes</div>
+            <div class="dif-value" id="d-itemsFaltantes">—</div>
+          </div>
+          <div class="dif-card danger">
+            <div class="dif-label">Valor faltantes</div>
+            <div class="dif-value" id="d-valorFaltantes">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Ítems sobrantes</div>
+            <div class="dif-value" id="d-itemsSobrantes">—</div>
+          </div>
+          <div class="dif-card warn">
+            <div class="dif-label">Valor sobrantes</div>
+            <div class="dif-value" id="d-valorSobrantes">—</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USUARIOS -->
+    <div class="panel" id="tab-usuarios">
+      <div class="card">
+        <div class="card-title">Gestión de usuarios</div>
+        <div style="margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+          <p style="font-size:13px;color:var(--text2)">Guardados en pestaña <b style="color:var(--accent)">USUARIOS</b> del Sheet.</p>
+          <button class="btn btn-secondary btn-sm" onclick="cargarUsuarios()">↻ Actualizar</button>
+        </div>
+        <div class="user-table-header" style="grid-template-columns:1fr 1fr 100px 100px 80px auto auto"><span>Usuario</span><span>Nombre</span><span>Rol</span><span>Bodega</span><span>Activo</span><span>Edit</span><span>Borrar</span></div>
+        <div id="users-table-body"></div>
+        <div class="divider"></div>
+        <button class="btn btn-secondary" onclick="abrirModalUsuario(null)">+ Nuevo usuario</button>
+      </div>
+      <div class="card">
+        <div class="card-title">Responsables del mes</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Guardados en pestaña <b style="color:var(--accent)">RESPONSABLES</b> — visibles en todos los dispositivos.</p>
+        <div id="resp-list"></div>
+        <div class="divider"></div>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+          <input type="text" id="nuevo-responsable" placeholder="Nombre del responsable" style="margin-bottom:0;flex:1;min-width:200px" onkeydown="if(event.key==='Enter') agregarResponsable()">
+          <button class="btn btn-secondary" onclick="agregarResponsable()">+ Agregar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- INFORME CRUZADO -->
+    <div class="panel" id="tab-informe">
+      <div class="card">
+        <div class="card-title">Informe cruzado de bodegas</div>
+        <p style="font-size:13px;color:var(--text2);margin-bottom:16px">Genera un Excel con inventario, cruces detectados entre bodegas, faltantes y artículos similares.</p>
+        <div style="margin-bottom:16px">
+          <label style="display:block;margin-bottom:8px">Bodegas a incluir</label>
+          <div id="informe-bodegas-check" style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+            <span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Cargando bodegas…</span>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="informe-todas" onchange="toggleTodasBodegas(this.checked)" checked>
+            Seleccionar todas
+          </label>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="checkbox" id="informe-similares" checked>
+            Incluir análisis de descripciones similares
+          </label>
+        </div>
+        <button class="btn btn-primary" id="btn-generar-informe" onclick="generarInforme()" style="width:auto">
+          ⬇ Generar y descargar Excel
+        </button>
+        <div id="informe-status" style="margin-top:14px;font-size:13px;color:var(--text2);font-family:var(--mono);display:none"></div>
+      </div>
+    </div>
+
+    <!-- CONFIG -->
+    <div class="panel" id="tab-config">
+      <div class="card">
+        <div class="card-title">Bodegas configuradas</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Cada bodega tiene su propia URL de script y sheet. Los usuarios verán estas bodegas en el login.</p>
+        <div id="bodegas-lista" style="margin-bottom:20px"></div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px">
+          <div class="card-title" style="margin-bottom:14px">Agregar / editar bodega</div>
+          <div class="form-grid" style="margin-bottom:12px">
+            <div class="form-group">
+              <label>Nombre de la bodega</label>
+              <input type="text" id="nb-nombre" placeholder="ej: BQEF" style="text-transform:uppercase;margin-bottom:0">
+            </div>
+            <div class="form-group">
+              <label>Etiqueta visible</label>
+              <input type="text" id="nb-label" placeholder="ej: Bodega Principal" style="margin-bottom:0">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:12px">
+            <label>URL del Apps Script (termina en /exec)</label>
+            <input type="text" id="nb-script" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:0">
+          </div>
+          <div class="form-group" style="margin-bottom:16px">
+            <label>URL del Google Sheet activo</label>
+            <input type="text" id="nb-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin-bottom:0">
+          </div>
+          <button class="btn btn-primary" onclick="agregarBodega()" style="width:auto">+ Guardar bodega</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Conexión al Script Maestro</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">URL del Script Maestro — esta URL nunca cambia. Es la base de toda la configuración centralizada.</p>
+        <div class="config-item">
+          <div><div class="config-label">URL Script Maestro</div><div class="config-desc">Termina en /exec · Solo cambia si recreas el script maestro</div></div>
+          <input type="text" class="config-input" id="cfg-maestro-url">
+        </div>
+        <div class="config-item">
+          <div><div class="config-label">URL Script Bodega actual</div><div class="config-desc">Se asigna automáticamente al iniciar sesión</div></div>
+          <input type="text" class="config-input" id="cfg-script-url" placeholder="Se carga automáticamente al hacer login">
+        </div>
+        <div style="margin-top:20px">
+          <button class="btn btn-primary" onclick="guardarConfig()" style="width:auto">Guardar configuración</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL SERIES -->
+<div id="series-panel">
+  <div class="series-topbar">
+    <div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px">Ingreso de Series</div>
+      <div style="font-size:13px;color:var(--text2)">Escanea o ingresa cada número de serie</div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="finalizarSeries()">Finalizar ✓</button>
+  </div>
+  <div class="series-main">
+    <div class="series-badge">
+      <div><div class="series-badge-code" id="sp-codigo">—</div><div style="font-size:13px;color:var(--text2)" id="sp-desc">—</div></div>
+      <div style="text-align:right">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.1em">Bodega</div>
+        <div style="font-family:var(--mono);font-size:13px;color:var(--accent2)" id="sp-bodega">—</div>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Series esperadas en bodega</div>
+      <div id="sp-esperadas-list"><div class="empty">Cargando…</div></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Ingresar serie</div>
+      <div class="serie-scan-row">
+        <input type="text" id="serie-input" placeholder="Escanea o escribe el número de serie" autocomplete="off" autocorrect="off" onkeydown="if(event.key==='Enter') agregarSerie()">
+        <button class="btn btn-secondary" onclick="agregarSerie()">Agregar</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Series ingresadas en esta sesión</div>
+      <div class="series-log" id="series-log"></div>
+      <div class="empty" id="series-empty">Sin series ingresadas aún</div>
+    </div>
+    <button class="btn btn-primary" onclick="finalizarSeries()" style="margin-bottom:40px">✓ Finalizar y guardar conteo</button>
+  </div>
+</div>
+
+<!-- MODAL SERIE NO COINCIDE -->
+<div class="modal-overlay" id="modal-serie">
+  <div class="modal">
+    <span class="modal-icon">⚠️</span>
+    <div class="modal-title" id="modal-serie-title">Serie no coincide</div>
+    <div class="modal-desc" id="modal-serie-desc"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="responderModal(false)">No guardar</button>
+      <button class="btn btn-warn" onclick="responderModal(true)">Guardar igual</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR GUARDADO -->
+<div class="modal-overlay" id="modal-confirmar">
+  <div class="modal">
+    <span class="modal-icon">✅</span>
+    <div class="modal-title">¿Está correcto?</div>
+    <div class="modal-desc">
+      <table style="width:100%;font-size:13px;border-collapse:collapse">
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">CÓDIGO</td><td style="padding:4px 0;font-weight:600" id="conf-codigo">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">DESCRIPCIÓN</td><td style="padding:4px 0" id="conf-desc">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">CONTEO</td><td style="padding:4px 0;font-weight:600;color:var(--accent)" id="conf-conteo">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">UBICACIÓN</td><td style="padding:4px 0" id="conf-ubicacion">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">RESPONSABLE</td><td style="padding:4px 0" id="conf-responsable">—</td></tr>
+        <tr><td style="color:var(--text2);padding:4px 0;font-family:var(--mono);font-size:11px">FOTO</td><td style="padding:4px 0;font-size:12px" id="conf-imagen">—</td></tr>
+      </table>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" onclick="responderConfirmacion(false)">No, corregir</button>
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="responderConfirmacion(true)">Sí, continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL TIENE SERIE -->
+<div class="modal-overlay" id="modal-tiene-serie">
+  <div class="modal">
+    <span class="modal-icon">📋</span>
+    <div class="modal-title">¿El artículo tiene serie?</div>
+    <div class="modal-desc">¿Deseas ingresar números de serie para este artículo?</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="responderTieneSerie(false)">No, guardar directo</button>
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="responderTieneSerie(true)">Sí, ingresar series</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL USUARIO -->
+<div class="modal-overlay" id="modal-usuario">
+  <div class="modal">
+    <div class="modal-title" id="modal-u-titulo">Nuevo usuario</div>
+    <div class="form-group"><label>Usuario (login)</label><input type="text" id="m-usuario" placeholder="ej: jperez" autocomplete="off"></div>
+    <div class="form-group"><label>Contraseña <span style="color:var(--text2);font-size:10px">(vacío = no cambiar)</span></label><input type="password" id="m-pass" placeholder="••••••••"></div>
+    <div class="form-group"><label>Nombre completo</label><input type="text" id="m-nombre" placeholder="ej: Juan Pérez"></div>
+    <div class="form-group"><label>Rol</label><select id="m-rol"><option value="admin">Admin</option><option value="editor" selected>Editor</option><option value="lector">Lector</option></select></div>
+    <div class="form-group"><label>Bodega asignada <span style="color:var(--text2);font-size:10px">(vacío = todas)</span></label><input type="text" id="m-bodega" placeholder="ej: BQEF" style="text-transform:uppercase"></div>
+    <div class="form-group" style="flex-direction:row;align-items:center;gap:12px;margin-bottom:20px">
+      <label style="margin:0">Activo</label>
+      <label class="toggle"><input type="checkbox" id="m-activo" checked><span class="toggle-slider"></span></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="cerrarModalUsuario()">Cancelar</button>
+      <button class="btn btn-primary" id="btn-modal-guardar" onclick="guardarUsuarioModal()">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIG BODEGA (desde login) -->
+<div class="modal-overlay" id="modal-cfg-bodega">
+  <div class="modal" style="width:480px;max-width:95vw">
+    <div class="modal-title" style="margin-bottom:4px">⚙ Configurar sistema</div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:10px">URL Script Maestro</div>
+      <p style="font-size:12px;color:var(--text2);margin:0 0 10px;font-family:var(--mono)">URL central que nunca cambia. Se configura una sola vez.</p>
+      <input type="text" id="mb-maestro" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:10px;font-size:12px">
+      <button class="btn btn-primary" onclick="guardarMaestroUrl()" style="width:auto;font-size:12px">Guardar URL Maestro</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin-bottom:10px;font-family:var(--mono)">Bodegas disponibles en el login:</p>
+    <div id="mb-lista" style="margin-bottom:16px;max-height:160px;overflow-y:auto"></div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+      <div style="font-family:var(--mono);font-size:10px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:12px">Agregar bodega</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div><label style="display:block;margin-bottom:4px">Código</label><input type="text" id="mb-nombre" placeholder="BQEF" style="text-transform:uppercase;margin-bottom:0"></div>
+        <div><label style="display:block;margin-bottom:4px">Etiqueta</label><input type="text" id="mb-label" placeholder="Bodega Principal" style="margin-bottom:0"></div>
+      </div>
+      <div style="margin-bottom:10px"><label style="display:block;margin-bottom:4px">URL Apps Script (/exec)</label><input type="text" id="mb-script" placeholder="https://script.google.com/macros/s/.../exec" style="margin-bottom:0;font-size:12px"></div>
+      <div style="margin-bottom:14px"><label style="display:block;margin-bottom:4px">URL Google Sheet</label><input type="text" id="mb-sheet" placeholder="https://docs.google.com/spreadsheets/d/..." style="margin-bottom:0;font-size:12px"></div>
+      <button class="btn btn-primary" onclick="agregarBodegaModal()" style="width:auto;font-size:12px">+ Agregar</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="width:auto;flex:1" onclick="cerrarModalCfgBodega()">Listo</button>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar"></div>
+
+<script>
+// ── SCRIPT MAESTRO — esta URL nunca cambia ──
+// Reemplaza con la URL /exec de tu Script Maestro después de desplegarlo
+const MAESTRO_URL = localStorage.getItem('cfg_maestroUrl') || 'PEGAR_URL_SCRIPT_MAESTRO_AQUI';
+const SCRIPT_URL  = MAESTRO_URL; // compatibilidad con código existente
+const SHEET_URL   = '';          // ya no se usa — viene del login
+
+function getMaestroUrl(){ return localStorage.getItem('cfg_maestroUrl') || MAESTRO_URL; }
+function getScriptUrl(){ 
+  // Post-login: usar script de la bodega. Pre-login: usar maestro
+  return localStorage.getItem('cfg_scriptUrl') || getMaestroUrl(); 
+}
+function getSheetUrl() { return localStorage.getItem('cfg_sheetUrl') || ''; }
+
+var state = {
+  currentUser: null, productCache: {}, resumenData: [],
+  bodega: '', mostrarStock: false,
+  formActual: {}, seriesIngresadas: [], seriesEstaSession: [],
+  imagenBase64: '',   // solo para preview local
+  imagenUrl: ''       // URL de Drive (lo que se guarda en sheet)
+};
+
+// api() — operaciones de la bodega (buscarProducto, guardarConteo, etc.)
+async function api(action, payload){
+  payload = payload || {};
+  var params = new URLSearchParams(Object.assign({ action: action }, payload));
+  var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
+  if (!res.ok) throw new Error('Error de red: ' + res.status);
+  return res.json();
+}
+
+// apiMaestro() — operaciones centrales (usuarios, bodegas, responsables, config)
+async function apiMaestro(action, payload){
+  payload = payload || {};
+  var params = new URLSearchParams(Object.assign({ action: action }, payload));
+  var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
+  if (!res.ok) throw new Error('Error de red: ' + res.status);
+  return res.json();
+}
+
+// ── LOGIN ──
+// ── BODEGAS STORAGE ──
+function getBodegas(){
+  try{ return JSON.parse(localStorage.getItem('cfg_bodegas')||'[]'); }catch(e){ return []; }
+}
+function saveBodegas(list){ localStorage.setItem('cfg_bodegas', JSON.stringify(list)); }
+
+function renderLoginBodegas(){
+  var sel = document.getElementById('l-bodega');
+  var bodegas = getBodegas();
+  // Preserve current selection
+  var prev = sel.value;
+  sel.innerHTML = '<option value="">— Selecciona una bodega —</option>';
+  bodegas.forEach(function(b){
+    var opt = document.createElement('option');
+    opt.value = b.codigo;
+    opt.textContent = b.codigo + (b.label ? ' — ' + b.label : '');
+    opt.dataset.script = b.scriptUrl || '';
+    opt.dataset.sheet  = b.sheetUrl  || '';
+    sel.appendChild(opt);
+  });
+  if(prev) sel.value = prev;
+  // If only one bodega, auto-select it
+  if(bodegas.length === 1) sel.value = bodegas[0].codigo;
+}
+
+function onBodegaChange(){
+  var sel = document.getElementById('l-bodega');
+  var opt = sel.options[sel.selectedIndex];
+  if(opt && opt.dataset.script){
+    localStorage.setItem('cfg_scriptUrl', opt.dataset.script);
+    if(opt.dataset.sheet) localStorage.setItem('cfg_sheetUrl', opt.dataset.sheet);
   }
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  RESUMEN COMPLETO — para el informe cruzado de bodegas
-// ══════════════════════════════════════════════════════════════════
-function getResumenCompleto() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var shRes = ss.getSheetByName(SHEET_RESUMEN);
-  var shVal = ss.getSheetByName(SHEET_VALORIZADO);
-  if (!shRes || shRes.getLastRow() < 2) return { items: [] };
+// Modal config bodega desde login
+function mostrarConfigBodega(){
+  renderMbLista();
+  // Pre-cargar URL maestro si ya existe
+  var mInput = document.getElementById('mb-maestro');
+  if(mInput) mInput.value = getMaestroUrl() !== 'PEGAR_URL_SCRIPT_MAESTRO_AQUI' ? getMaestroUrl() : '';
+  document.getElementById('modal-cfg-bodega').classList.add('open');
+}
 
-  // Leer stock esperado del INV VALORIZADO
-  var stockMap = {};
-  var descMap  = {};
-  if (shVal && shVal.getLastRow() >= 2) {
-    var valData = shVal.getRange(2, 1, shVal.getLastRow()-1, 3).getValues();
-    for (var i = 0; i < valData.length; i++) {
-      var cod  = String(valData[i][VAL_COD-1]).trim().toUpperCase();
-      var desc = String(valData[i][VAL_DESC-1]).trim();
-      var stk  = Number(valData[i][VAL_STOCK-1]) || 0;
-      if (cod) { stockMap[cod] = stk; descMap[cod] = desc; }
+function guardarMaestroUrl(){
+  var val = document.getElementById('mb-maestro').value.trim();
+  if(!val){ toast('Ingresa la URL del Script Maestro','error'); return; }
+  if(!val.includes('script.google.com')){ toast('La URL no parece válida','error'); return; }
+  localStorage.setItem('cfg_maestroUrl', val);
+  toast('URL Maestro guardada ✓ — recargando...','success');
+  setTimeout(function(){ location.reload(); }, 1200);
+}
+function cerrarModalCfgBodega(){
+  document.getElementById('modal-cfg-bodega').classList.remove('open');
+  renderLoginBodegas();
+}
+function renderMbLista(){
+  var bodegas = getBodegas();
+  var el = document.getElementById('mb-lista');
+  if(!bodegas.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2);font-family:var(--mono);text-align:center;padding:12px 0">Sin bodegas configuradas aún</p>'; return; }
+  el.innerHTML = bodegas.map(function(b,i){
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px">'
+      +'<div><span style="font-family:var(--mono);font-size:13px;color:var(--accent)">'+b.codigo+'</span>'
+      +(b.label?'<span style="font-size:12px;color:var(--text2);margin-left:8px">'+b.label+'</span>':'')+'</div>'
+      +'<button class="btn btn-danger btn-sm" onclick="eliminarBodegaModal('+i+')">✕ Eliminar</button>'
+      +'</div>';
+  }).join('');
+}
+async function agregarBodegaModal(){
+  var codigo = document.getElementById('mb-nombre').value.trim().toUpperCase();
+  var label  = document.getElementById('mb-label').value.trim();
+  var script = document.getElementById('mb-script').value.trim();
+  var sheet  = document.getElementById('mb-sheet').value.trim();
+  if(!codigo){ toast('Ingresa el código de la bodega','error'); return; }
+  if(!script){ toast('Ingresa la URL del script','error'); return; }
+  var bodegas = getBodegas();
+  var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
+  var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
+  if(idx>=0) bodegas[idx]=entry; else bodegas.push(entry);
+  saveBodegas(bodegas);
+  document.getElementById('mb-nombre').value='';
+  document.getElementById('mb-label').value='';
+  document.getElementById('mb-script').value='';
+  document.getElementById('mb-sheet').value='';
+  renderMbLista();
+  toast('Bodega guardada','success');
+  // Sincronizar al servidor en background
+  try {
+    var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
+    await fetch(getScriptUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
+  } catch(e){ /* silencioso */ }
+}
+function eliminarBodegaModal(i){
+  var bodegas = getBodegas();
+  bodegas.splice(i,1);
+  saveBodegas(bodegas);
+  renderMbLista();
+}
+
+// Config panel bodega list (admin)
+function renderBodegasLista(){
+  var bodegas = getBodegas();
+  var el = document.getElementById('bodegas-lista');
+  if(!el) return;
+  if(!bodegas.length){ el.innerHTML='<p style="font-size:12px;color:var(--text2);font-family:var(--mono)">Sin bodegas configuradas. Agrega la primera abajo.</p>'; return; }
+  el.innerHTML = bodegas.map(function(b,i){
+    return '<div style="display:grid;grid-template-columns:80px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid rgba(42,53,72,.5)">'
+      +'<span style="font-family:var(--mono);font-size:13px;color:var(--accent)">'+b.codigo+'</span>'
+      +'<div><div style="font-size:13px">'+( b.label||'—')+'</div>'
+      +'<div style="font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px">'+(b.scriptUrl||'sin script')+'</div></div>'
+      +'<button class="btn btn-danger btn-sm" onclick="eliminarBodegaAdmin('+i+')">✕</button>'
+      +'</div>';
+  }).join('');
+}
+function eliminarBodegaAdmin(i){
+  var bodegas = getBodegas();
+  bodegas.splice(i,1);
+  saveBodegas(bodegas);
+  renderBodegasLista();
+  renderLoginBodegas();
+}
+async function agregarBodega(){
+  var codigo = document.getElementById('nb-nombre').value.trim().toUpperCase();
+  var label  = document.getElementById('nb-label').value.trim();
+  var script = document.getElementById('nb-script').value.trim();
+  var sheet  = document.getElementById('nb-sheet').value.trim();
+  if(!codigo){ toast('Ingresa el código de la bodega','error'); return; }
+  if(!script){ toast('Ingresa la URL del script','error'); return; }
+  var bodegas = getBodegas();
+  var idx = bodegas.findIndex(function(b){ return b.codigo===codigo; });
+  var entry = { codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet };
+  if(idx>=0) bodegas[idx]=entry; else bodegas.push(entry);
+  saveBodegas(bodegas);
+  document.getElementById('nb-nombre').value='';
+  document.getElementById('nb-label').value='';
+  document.getElementById('nb-script').value='';
+  document.getElementById('nb-sheet').value='';
+  renderBodegasLista();
+  renderLoginBodegas();
+  // Sincronizar al servidor
+  try {
+    toast('Guardando en servidor…','info');
+    var p = new URLSearchParams({ action:'guardarBodega', codigo:codigo, label:label, scriptUrl:script, sheetUrl:sheet });
+    var res = await fetch(getMaestroUrl() + '?' + p.toString(), { method:'GET', redirect:'follow' });
+    var data = await res.json();
+    if(data.success) toast('Bodega guardada y sincronizada ✓','success');
+    else toast('Local ok · servidor: ' + data.message,'error');
+  } catch(e){ toast('Guardada local. Sin conexión al servidor.','error'); }
+}
+
+async function doLogin(){
+  var usuario = document.getElementById('l-user').value.trim();
+  var pass    = document.getElementById('l-pass').value;
+  var errEl   = document.getElementById('login-error');
+  var btn     = document.getElementById('btn-login');
+  if (!usuario || !pass){ showLoginError('Ingresa usuario y contraseña'); return; }
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verificando…';
+  errEl.style.display = 'none';
+  try {
+    var bodega = document.getElementById('l-bodega').value.trim().toUpperCase();
+    // El login siempre va al Script Maestro
+    var params = new URLSearchParams({ action:'login', usuario:usuario, pass:pass, bodega:bodega });
+    var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
+    if(!res.ok) throw new Error('Error de red: ' + res.status);
+    var data = await res.json();
+    if (data.success){
+      state.currentUser = data;
+      state.bodega = data.bodega || '';
+      // Guardar script y sheet de la bodega para operaciones post-login
+      if(data.scriptUrl){ localStorage.setItem('cfg_scriptUrl', data.scriptUrl); }
+      if(data.sheetUrl) { localStorage.setItem('cfg_sheetUrl',  data.sheetUrl);  }
+      // Aplicar config global recibida del maestro
+      if(data.config){
+        state.config = data.config;
+        if(data.config.mostrar_stock) localStorage.setItem('cfg_mostrarStock', data.config.mostrar_stock);
+      }
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      applyRole(data.rol, data.nombre || data.usuario);
+      initApp();
+    } else { showLoginError(data.message || 'Credenciales incorrectas'); }
+  } catch(e){ showLoginError('Sin conexión. Verifica la URL del Script Maestro en Config.'); }
+  btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
+}
+function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
+document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-bodega').focus(); });
+document.getElementById('l-user').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-pass').focus(); });
+function doLogout(){
+  state.currentUser=null;
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app').style.display='none';
+  document.getElementById('l-pass').value='';
+  document.getElementById('l-bodega').value='';
+  document.getElementById('login-error').style.display='none';
+}
+
+// Init login dropdown on page load
+// ── AUTO-FETCH BODEGAS desde el script maestro ──
+(function(){
+  // Siempre intentar refrescar desde el servidor
+  renderLoginBodegas(); // render local primero (puede estar vacío)
+  
+  // Seed BQEF si no hay nada local (primera vez)
+  var existing = getBodegas();
+  if(existing.length === 0 && SCRIPT_URL){
+    existing.push({ codigo: 'BQEF', label: 'Bodega Principal', scriptUrl: SCRIPT_URL, sheetUrl: SHEET_URL });
+    saveBodegas(existing);
+    renderLoginBodegas();
+  }
+
+  // Intentar refrescar la lista desde el servidor en background
+  fetchBodegasRemoto();
+})();
+
+async function fetchBodegasRemoto(){
+  var syncMsg = document.getElementById('login-sync-msg');
+  if(syncMsg) syncMsg.style.display='block';
+  try {
+    var res = await fetch(getMaestroUrl() + '?action=getBodegas', { method:'GET', redirect:'follow' });
+    if(!res.ok) return;
+    var data = await res.json();
+    if(data && data.bodegas && data.bodegas.length > 0){
+      saveBodegas(data.bodegas);
+      renderLoginBodegas();
+    }
+  } catch(e){ /* silencioso — usa caché local */ }
+  finally { if(syncMsg) syncMsg.style.display='none'; }
+}
+function applyRole(role, nombre){
+  document.getElementById('ui-nombre').textContent = nombre;
+  var chip = document.getElementById('ui-role-chip');
+  chip.className = 'role-chip role-' + role; chip.textContent = role;
+  document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = role==='admin' ? '' : 'none'; });
+  // Toggle stock: visible para todos, editable solo por admin
+  document.getElementById('stock-toggle-wrap').style.display = 'block';
+  document.getElementById('toggle-stock').disabled = (role !== 'admin');
+  if (role==='lector'){
+    document.getElementById('btn-guardar').disabled=true;
+    document.getElementById('btn-guardar').style.opacity='.4';
+    ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ var el=document.getElementById(id); if(el) el.disabled=true; });
+  }
+}
+
+// ── INIT ──
+async function initApp(){
+  cargarResponsablesUI();
+  cargarConfigUI();
+  // Mostrar bodega en topbar
+  if(state.bodega){
+    var el = document.getElementById('bodega-topbar');
+    el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
+  }
+  // Leer config global del Maestro (mostrar_stock, aviso_duplicado)
+  try {
+    var cfgData = await apiMaestro('getConfig');
+    if(cfgData.config){
+      var cfg = cfgData.config;
+      // Aplicar mostrar_stock globalmente
+      var mostrarStock = cfg.mostrar_stock === 'SI';
+      state.mostrarStock = mostrarStock;
+      var toggleEl = document.getElementById('toggle-stock');
+      if(toggleEl) toggleEl.checked = mostrarStock;
+      // Guardar en state para aviso duplicado
+      state.avisoDuplicado = cfg.aviso_duplicado !== 'NO';
+    }
+  } catch(e){ 
+    // Fallback: leer de localStorage si el maestro no responde
+    state.mostrarStock = localStorage.getItem('cfg_mostrarStock') === 'SI';
+    var toggleEl = document.getElementById('toggle-stock');
+    if(toggleEl) toggleEl.checked = state.mostrarStock;
+    state.avisoDuplicado = true;
+  }
+  setTimeout(function(){ document.getElementById('codigo-input').focus(); }, 200);
+}
+
+// ── TOGGLE STOCK ──
+async function toggleStock(activo){
+  state.mostrarStock = activo;
+  // Mostrar/ocultar stock box según estado
+  var box = document.getElementById('stock-box');
+  if(!activo){ box.style.display='none'; }
+  else {
+    var codigo = document.getElementById('codigo-input').value.trim();
+    if(codigo && state.productCache[codigo]){
+      document.getElementById('stock-value').textContent = state.productCache[codigo].stock !== undefined ? state.productCache[codigo].stock : '—';
+      box.style.display = 'flex';
     }
   }
+  // Solo admin puede guardar cambio global en el Maestro
+  if(state.currentUser && state.currentUser.rol === 'admin'){
+    try {
+      await apiMaestro('guardarConfig', { clave:'mostrar_stock', valor: activo ? 'SI' : 'NO' });
+      toast('Config global actualizada — aplica a todos los usuarios ✓', 'success');
+    } catch(e){
+      toast('No se pudo guardar en el Maestro','error');
+    }
+  }
+}
 
-  // Leer conteos del RESUMEN INVENTARIO — agrupar por código (último conteo)
-  var lastRow = shRes.getLastRow();
-  var resData = shRes.getRange(2, 1, lastRow-1, 17).getValues();
-  var conteoMap = {};
-  var respMap   = {};
-  var fechaMap  = {};
+// ── TABS ──
+function switchTab(btn){
+  document.querySelectorAll('.tab-btn').forEach(function(b){ b.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+  btn.classList.add('active');
+  var panel = document.getElementById('tab-' + btn.dataset.tab);
+  if(panel) panel.classList.add('active');
+  if(btn.dataset.tab==='resumen') cargarResumen();
+  if(btn.dataset.tab==='usuarios') cargarUsuarios();
+  if(btn.dataset.tab==='reporte') cargarReporte();
+  if(btn.dataset.tab==='informe') cargarBodegasInforme();
+}
 
-  for (var j = 0; j < resData.length; j++) {
-    var cod = String(resData[j][COL_CODIGO-1]).trim().toUpperCase();
-    if (!cod) continue;
-    conteoMap[cod] = Number(resData[j][COL_CONTEO-1]) || 0;
-    respMap[cod]   = String(resData[j][COL_RESPONSABLE-1]).trim();
-    var fv = resData[j][COL_FECHA-1];
-    fechaMap[cod]  = fv ? new Date(fv).toLocaleDateString('es-EC') : '';
+// ── VALIDACIÓN ──
+function limpiarError(inputId, hintId){ document.getElementById(inputId).classList.remove('field-error'); document.getElementById(hintId).classList.remove('show'); }
+function marcarError(inputId, hintId){ document.getElementById(inputId).classList.add('field-error'); document.getElementById(hintId).classList.add('show'); }
+function validarFormulario(){
+  var codigo = document.getElementById('codigo-input').value.trim();
+  if(!codigo){ toast('Ingresa y verifica un código NAF', 'error'); return false; }
+  if(!state.productCache[codigo]){ toast('Verifica el código antes de guardar', 'error'); return false; }
+  var ok = true;
+  if(!document.getElementById('f-conteo').value.trim()){ marcarError('f-conteo','hint-conteo'); ok=false; }
+  if(!document.getElementById('f-ubicacion').value.trim()){ marcarError('f-ubicacion','hint-ubicacion'); ok=false; }
+  if(!document.getElementById('f-responsable').value){ marcarError('f-responsable','hint-responsable'); ok=false; }
+  if(!ok) toast('Completa todos los campos obligatorios', 'error');
+  return ok;
+}
+
+// ── BUSCAR PRODUCTO ──
+var debounceTimer;
+function onCodigoInput(){ clearTimeout(debounceTimer); debounceTimer = setTimeout(buscarProducto, 700); }
+async function buscarProducto(){
+  var codigo = document.getElementById('codigo-input').value.trim();
+  var preview = document.getElementById('product-preview');
+  var stockBox = document.getElementById('stock-box');
+  stockBox.style.display = 'none';
+  if(!codigo){
+    preview.className='product-preview';
+    preview.innerHTML='<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>';
+    return;
+  }
+  if(state.productCache[codigo]){
+    mostrarProducto(codigo, state.productCache[codigo].descripcion, state.productCache[codigo].stock);
+    verificarDuplicado(codigo);
+    return;
+  }
+  preview.className='product-preview';
+  preview.innerHTML='<span class="spinner"></span><span style="margin-left:10px;font-size:13px;color:var(--text2)">Verificando…</span>';
+  try {
+    var data = await api('buscarProducto', { codigo: codigo });
+    if(data.found){
+      state.productCache[codigo] = { descripcion: data.descripcion, stock: data.stock };
+      mostrarProducto(codigo, data.descripcion, data.stock);
+      verificarDuplicado(codigo);
+    } else {
+      preview.className='product-preview not-found';
+      preview.innerHTML='<span class="product-name" style="color:var(--danger)">⚠ Código <b>'+codigo+'</b> no encontrado en INV VALORIZADO</span><span class="product-status status-notfound">No en bodega</span>';
+    }
+  } catch(e){
+    preview.className='product-preview not-found';
+    preview.innerHTML='<span style="color:var(--danger);font-size:13px">Error de conexión.</span>';
+  }
+}
+
+// ── VERIFICAR DUPLICADO ──
+async function verificarDuplicado(codigo){
+  if(!state.avisoDuplicado) return;
+  var avisoEl = document.getElementById('aviso-duplicado');
+  if(!avisoEl) return;
+  avisoEl.style.display = 'none';
+  try {
+    var data = await api('verificarDuplicado', { codigo: codigo });
+    if(data.encontrado){
+      avisoEl.innerHTML = '⚠ Este código ya fue ingresado por <strong>' + (data.usuario || 'otro usuario') + '</strong>'
+        + (data.fecha ? ' el ' + data.fecha : '') + '. Puedes guardar igualmente.';
+      avisoEl.style.display = 'block';
+    }
+  } catch(e){ /* silencioso */ }
+}
+function mostrarProducto(codigo, desc, stock){
+  var p = document.getElementById('product-preview');
+  p.className='product-preview found';
+  p.innerHTML='<span class="product-name">'+desc+'</span><span class="product-status status-found">✓ Encontrado</span>';
+  // Mostrar stock si toggle activo
+  if(state.mostrarStock){
+    document.getElementById('stock-value').textContent = stock !== undefined && stock !== '' ? stock : '—';
+    document.getElementById('stock-box').style.display = 'flex';
+  }
+}
+
+// ── GUARDAR ──
+function iniciarGuardado(){
+  if(!validarFormulario()) return;
+  var codigo = document.getElementById('codigo-input').value.trim();
+  state.formActual = {
+    codigo: codigo,
+    descripcion: state.productCache[codigo] ? state.productCache[codigo].descripcion : '—',
+    conteo: document.getElementById('f-conteo').value.trim(),
+    ubicacion: document.getElementById('f-ubicacion').value.trim(),
+    responsable: document.getElementById('f-responsable').value,
+    imagen: state.imagenUrl || '',
+  };
+  state.seriesIngresadas = [];
+  // Mostrar modal de confirmación
+  document.getElementById('conf-codigo').textContent = codigo;
+  document.getElementById('conf-desc').textContent = state.formActual.descripcion;
+  document.getElementById('conf-conteo').textContent = state.formActual.conteo;
+  document.getElementById('conf-ubicacion').textContent = state.formActual.ubicacion;
+  document.getElementById('conf-responsable').textContent = state.formActual.responsable;
+  document.getElementById('conf-imagen').textContent = state.imagenBase64 ? '✓ Con foto' : 'Sin foto';
+  document.getElementById('modal-confirmar').classList.add('open');
+}
+function responderConfirmacion(ok){
+  document.getElementById('modal-confirmar').classList.remove('open');
+  if(ok) document.getElementById('modal-tiene-serie').classList.add('open');
+  // Si no, regresa al formulario sin guardar
+}
+function responderTieneSerie(tiene){
+  document.getElementById('modal-tiene-serie').classList.remove('open');
+  if(tiene){ abrirPanelSeries(); } else { guardarConteo(); }
+}
+async function guardarConteo(){
+  var f = state.formActual;
+  var btn = document.getElementById('btn-guardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando…';
+  try {
+    var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, imagen:f.imagen||'' });
+    if(data.success){
+      toast('Registro guardado ✓', 'success');
+      addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true });
+      limpiarFormulario();
+    } else { throw new Error(data.message || 'Error al guardar'); }
+  } catch(e){ toast('Error: '+e.message, 'error'); }
+  btn.disabled=false; btn.innerHTML='Guardar Registro ↗';
+}
+function limpiarFormulario(){
+  ['codigo-input','f-conteo','f-ubicacion','f-series-display'].forEach(function(id){ document.getElementById(id).value=''; });
+  document.getElementById('f-responsable').value='';
+  document.getElementById('product-preview').className='product-preview';
+  document.getElementById('product-preview').innerHTML='<span style="color:var(--text2);font-size:13px;font-family:var(--mono)">Ingresa un código para verificar el producto</span>';
+  document.getElementById('stock-box').style.display='none';
+  ['f-conteo','f-ubicacion','f-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('field-error'); });
+  ['hint-conteo','hint-ubicacion','hint-responsable'].forEach(function(id){ document.getElementById(id).classList.remove('show'); });
+  state.seriesIngresadas=[]; state.formActual={}; state.imagenBase64=''; state.imagenUrl='';
+  var av=document.getElementById('aviso-duplicado'); if(av) av.style.display='none';
+  quitarImagen(null);
+  document.getElementById('codigo-input').focus();
+}
+
+// ── SESSION LOG ──
+function addSessionLog(row){
+  var tbody=document.getElementById('session-log');
+  document.getElementById('session-empty').style.display='none';
+  var tr=document.createElement('tr');
+  tr.innerHTML='<td class="code-cell">'+row.codigo+'</td><td>'+row.descripcion+'</td><td><b>'+row.conteo+'</b></td><td>'+(row.ubicacion||'—')+'</td><td>'+row.responsable+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">'+(row.usuario||'—')+'</td><td style="font-family:var(--mono);font-size:11px">'+(row.series>0?row.series+' serie(s)':'—')+'</td><td><span style="font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:20px;background:'+(row.ok?'rgba(0,229,160,.15)':'rgba(255,71,87,.15)')+';color:'+(row.ok?'var(--accent)':'var(--danger)')+'">'+( row.ok?'OK':'ERROR')+'</span></td>';
+  tbody.insertBefore(tr, tbody.firstChild);
+}
+
+// ── PANEL SERIES ──
+async function abrirPanelSeries(){
+  var f = state.formActual;
+  state.seriesIngresadas = [];
+  state.seriesEstaSession = []; // resetear duplicados
+  document.getElementById('sp-codigo').textContent = f.codigo;
+  document.getElementById('sp-desc').textContent = f.descripcion;
+  document.getElementById('sp-bodega').textContent = state.bodega || '(no configurada)';
+  document.getElementById('series-log').innerHTML='';
+  document.getElementById('series-empty').style.display='block';
+  document.getElementById('serie-input').value='';
+  document.getElementById('series-panel').classList.add('open');
+  setTimeout(function(){ document.getElementById('serie-input').focus(); }, 300);
+  cargarSeriesEsperadas(f.codigo, state.bodega);
+}
+async function cargarSeriesEsperadas(codigo, bodega){
+  var container=document.getElementById('sp-esperadas-list');
+  container.innerHTML='<div class="empty">Cargando…</div>';
+  try {
+    var data = await api('getSeriesPorCodigo', { codigo:codigo, bodega:bodega });
+    var series = data.series || [];
+    if(!series.length){ container.innerHTML='<div class="empty">No hay series registradas para este código/bodega</div>'; return; }
+    container.innerHTML='';
+    series.forEach(function(s){
+      var div=document.createElement('div');
+      div.className='serie-item'+(s.registrada?' ok':'');
+      div.innerHTML='<span class="serie-num">'+(s.serie||'—')+'</span><span class="serie-status '+(s.registrada?'serie-ok':'')+'" style="'+(s.registrada?'':'background:rgba(122,139,168,.15);color:var(--text2)')+'">'+(s.registrada?'✓ Ya registrada':'Pendiente')+'</span>';
+      container.appendChild(div);
+    });
+  } catch(e){ container.innerHTML='<div class="empty" style="color:var(--danger)">Error al cargar series</div>'; }
+}
+
+var resolverModal = null;
+async function agregarSerie(){
+  var input=document.getElementById('serie-input');
+  var numSerie=input.value.trim();
+  if(!numSerie){ input.focus(); return; }
+
+  // ── VALIDAR DUPLICADO EN SESIÓN ──
+  var serieUpper = numSerie.toUpperCase();
+  var duplicado = state.seriesEstaSession.some(function(s){ return s.toUpperCase() === serieUpper; });
+  if(duplicado){
+    agregarSerieLog(numSerie, 'duplicate', '⚠ Serie duplicada en esta sesión');
+    toast('Esta serie ya fue ingresada en esta sesión', 'error');
+    input.value=''; input.focus();
+    return;
   }
 
-  // Construir items: todos los códigos del valorizado
-  var items = [];
-  Object.keys(stockMap).forEach(function(cod) {
-    var conteo     = conteoMap[cod] !== undefined ? conteoMap[cod] : null;
-    var stock      = stockMap[cod];
-    var diferencia = conteo !== null ? conteo - stock : null;
-    items.push({
-      codigo:      cod,
-      descripcion: descMap[cod] || '',
-      stock:       stock,
-      conteo:      conteo !== null ? conteo : '',
-      diferencia:  diferencia !== null ? diferencia : '',
-      responsable: respMap[cod] || '',
-      fecha:       fechaMap[cod] || ''
+  var codigo=state.formActual.codigo;
+  var bodega=state.bodega;
+  input.disabled=true;
+  try {
+    var data = await api('validarSerie', { codigo:codigo, serie:numSerie, bodega:bodega });
+    if(data.encontrada && data.ok){
+      await guardarSerieFisica(numSerie, false);
+      state.seriesEstaSession.push(numSerie);
+      agregarSerieLog(numSerie, 'ok', '✓ Serie válida');
+    } else if(data.encontrada && !data.codigoOk){
+      var f1 = await mostrarModalSerie('⚠️ Código no coincide','La serie <b>'+numSerie+'</b> está registrada bajo el código <b>'+data.codigoHoja+'</b>, no bajo <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f1){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (código no coincide)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+    } else if(data.encontrada && !data.bodegaOk){
+      var f2 = await mostrarModalSerie('⚠️ Bodega no coincide','La serie <b>'+numSerie+'</b> pertenece a la bodega <b>'+data.bodegaHoja+'</b>, no a <b>'+bodega+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f2){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (bodega no coincide)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+    } else {
+      var f3 = await mostrarModalSerie('⚠️ Serie no encontrada','La serie <b>'+numSerie+'</b> no está en la hoja SERIES para el código <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
+      if(f3){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (no estaba en hoja)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+    }
+  } catch(e){ toast('Error al validar serie: '+e.message, 'error'); }
+  input.disabled=false; input.value=''; input.focus();
+}
+async function guardarSerieFisica(numSerie, forzar){
+  var data = await api('guardarSerieFisica', { codigo:state.formActual.codigo, serie:numSerie, bodega:state.bodega, forzar:forzar.toString() });
+  if(!data.success) throw new Error(data.message);
+  state.seriesIngresadas.push(numSerie);
+  // Quitar de la lista de esperadas
+  quitarDeEsperadas(numSerie);
+}
+function quitarDeEsperadas(numSerie){
+  var container = document.getElementById('sp-esperadas-list');
+  var items = container.querySelectorAll('.serie-item');
+  items.forEach(function(item){
+    var span = item.querySelector('.serie-num');
+    if(span && span.textContent.trim().toUpperCase() === numSerie.toUpperCase()){
+      item.style.transition = 'all .3s';
+      item.style.opacity = '0';
+      item.style.transform = 'translateX(20px)';
+      setTimeout(function(){ item.remove();
+        if(!container.querySelector('.serie-item')){
+          container.innerHTML = '<div class="empty" style="color:var(--accent)">✓ Todas las series ingresadas</div>';
+        }
+      }, 300);
+    }
+  });
+}
+function agregarSerieLog(serie, tipo, label){
+  document.getElementById('series-empty').style.display='none';
+  var log=document.getElementById('series-log');
+  var div=document.createElement('div');
+  div.className='serie-item '+tipo;
+  var colorMap={'ok':'serie-ok','forced':'serie-forced','error-item':'serie-error','duplicate':'serie-dup'};
+  div.innerHTML='<span class="serie-num">'+serie+'</span><span class="serie-status '+(colorMap[tipo]||'')+'">'+label+'</span>';
+  log.insertBefore(div, log.firstChild);
+}
+function mostrarModalSerie(titulo, desc){
+  return new Promise(function(resolve){
+    document.getElementById('modal-serie-title').textContent=titulo;
+    document.getElementById('modal-serie-desc').innerHTML=desc;
+    document.getElementById('modal-serie').classList.add('open');
+    resolverModal=resolve;
+  });
+}
+function responderModal(forzar){ document.getElementById('modal-serie').classList.remove('open'); if(resolverModal){ resolverModal(forzar); resolverModal=null; } }
+async function finalizarSeries(){
+  document.getElementById('series-panel').classList.remove('open');
+  var n=state.seriesIngresadas.length;
+  document.getElementById('f-series-display').value = n>0 ? n+' serie(s) ingresada(s)' : '';
+  await guardarConteo();
+}
+
+// ── RESUMEN ──
+async function cargarResumen(){
+  var tbody=document.getElementById('resumen-body'), empty=document.getElementById('resumen-empty');
+  tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:24px"><span class="spinner"></span></td></tr>';
+  empty.style.display='none';
+  try {
+    var data=await api('getResumen');
+    state.resumenData=data.rows||[];
+    renderResumen(state.resumenData);
+    document.getElementById('stat-total').textContent=state.resumenData.length;
+    var hoy=new Date().toLocaleDateString('es-EC');
+    document.getElementById('stat-hoy').textContent=state.resumenData.filter(function(r){ return r.fecha===hoy; }).length;
+    document.getElementById('stat-resp').textContent=new Set(state.resumenData.map(function(r){ return r.responsable; })).size;
+  } catch(e){ tbody.innerHTML=''; empty.textContent='Error al cargar datos.'; empty.style.display='block'; }
+}
+function renderResumen(rows){
+  var tbody=document.getElementById('resumen-body'), empty=document.getElementById('resumen-empty');
+  tbody.innerHTML='';
+  if(!rows.length){ empty.style.display='block'; return; }
+  empty.style.display='none';
+  rows.forEach(function(r){
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td class="code-cell">'+(r.codigo||'—')+'</td><td>'+(r.descripcion||'—')+'</td><td><b>'+(r.conteo||'—')+'</b></td><td>'+(r.ubicacion||'—')+'</td><td>'+(r.responsable||'—')+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--accent2)">'+(r.usuario||'—')+'</td><td style="font-family:var(--mono);font-size:11px;color:var(--text2)">'+(r.fecha||'—')+'</td>';
+    tbody.appendChild(tr);
+  });
+}
+function filtrarTabla(){
+  var q=document.getElementById('filtro-input').value.toLowerCase();
+  renderResumen(state.resumenData.filter(function(r){ return (r.codigo||'').toLowerCase().includes(q)||(r.descripcion||'').toLowerCase().includes(q); }));
+}
+
+// ── REPORTE DIFERENCIAS ──
+async function cargarReporte(){
+  var ids=['d-totalExistencia','d-totalConteo','d-avance','d-noContados','d-porRevisar','d-valorInventario','d-valorConteo','d-itemsFaltantes','d-valorFaltantes','d-itemsSobrantes','d-valorSobrantes'];
+  ids.forEach(function(id){ document.getElementById(id).innerHTML='<span class="spinner" style="width:12px;height:12px"></span>'; });
+  try {
+    var data=await api('getDiferencias');
+    if(data.error){ ids.forEach(function(id){ document.getElementById(id).textContent='Error'; }); toast('Error: '+data.error,'error'); return; }
+    document.getElementById('d-totalExistencia').textContent = data.totalExistenciaItems || '—';
+    document.getElementById('d-totalConteo').textContent     = data.totalConteoItems     || '—';
+    document.getElementById('d-avance').textContent          = data.porcentajeAvance     || '—';
+    document.getElementById('d-noContados').textContent      = data.noContados           || '—';
+    document.getElementById('d-porRevisar').textContent      = data.itemsPorRevisar      || '—';
+    document.getElementById('d-valorInventario').textContent = data.valorTotalInventario  || '—';
+    document.getElementById('d-valorConteo').textContent     = data.valorTotalConteo      || '—';
+    document.getElementById('d-itemsFaltantes').textContent  = data.itemsFaltantes        || '—';
+    document.getElementById('d-valorFaltantes').textContent  = data.valorFaltantes        || '—';
+    document.getElementById('d-itemsSobrantes').textContent  = data.itemsSobrantes        || '—';
+    document.getElementById('d-valorSobrantes').textContent  = data.valorSobrantes        || '—';
+  } catch(e){
+    ids.forEach(function(id){ document.getElementById(id).textContent='—'; });
+    toast('Error al cargar reporte: '+e.message,'error');
+  }
+}
+
+// ── RESPONSABLES ──
+async function cargarResponsablesUI(){
+  try {
+    var data=await apiMaestro('getResponsables');
+    var resp=data.responsables||[];
+    var select=document.getElementById('f-responsable');
+    select.innerHTML='<option value="">— Seleccionar —</option>';
+    resp.forEach(function(r){ var opt=document.createElement('option'); opt.value=r; opt.textContent=r; select.appendChild(opt); });
+    renderResponsablesAdmin(resp);
+  } catch(e){ console.warn('No se pudieron cargar responsables:', e); }
+}
+function renderResponsablesAdmin(list){
+  var container=document.getElementById('resp-list');
+  if(!container) return;
+  container.innerHTML='';
+  if(!list.length){ container.innerHTML='<div class="empty">Sin responsables. Agrega el primero.</div>'; return; }
+  list.forEach(function(r){
+    var div=document.createElement('div');
+    div.style.cssText='display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;margin-bottom:8px';
+    var safe=r.replace(/'/g,"\\'");
+    div.innerHTML='<span style="font-size:14px;padding:10px 0">'+r+'</span><button class="btn btn-danger btn-sm" onclick="eliminarResponsable(\''+safe+'\')">✕</button>';
+    container.appendChild(div);
+  });
+}
+async function agregarResponsable(){
+  var input=document.getElementById('nuevo-responsable');
+  var nombre=input.value.trim();
+  if(!nombre){ toast('Ingresa un nombre','error'); return; }
+  try {
+    var data=await apiMaestro('guardarResponsable',{ nombre:nombre });
+    if(data.success){ toast('Responsable agregado ✓','success'); input.value=''; cargarResponsablesUI(); }
+    else { toast(data.message,'error'); }
+  } catch(e){ toast('Error de conexión','error'); }
+}
+async function eliminarResponsable(nombre){
+  if(!confirm('¿Eliminar a "'+nombre+'" de la lista?')) return;
+  try {
+    var data=await apiMaestro('eliminarResponsable',{ nombre:nombre });
+    if(data.success){ toast('Eliminado ✓','success'); cargarResponsablesUI(); }
+    else toast(data.message,'error');
+  } catch(e){ toast('Error de conexión','error'); }
+}
+
+// ── USUARIOS ──
+async function cargarUsuarios(){
+  var container=document.getElementById('users-table-body');
+  container.innerHTML='<div style="padding:20px;text-align:center"><span class="spinner"></span></div>';
+  try {
+    var data=await apiMaestro('getUsuarios');
+    renderUsersTable(data.users||[]);
+  } catch(e){ container.innerHTML='<p style="color:var(--danger);font-size:13px;padding:16px">Error: '+e.message+'</p>'; }
+}
+function renderUsersTable(users){
+  var container=document.getElementById('users-table-body');
+  container.innerHTML='';
+  if(!users.length){ container.innerHTML='<div class="empty">Sin usuarios</div>'; return; }
+  users.forEach(function(u){
+    var row=document.createElement('div'); row.className='user-table-row';
+    row.style.gridTemplateColumns='1fr 1fr 100px 100px 80px auto auto';
+    row.innerHTML='<span style="font-family:var(--mono);font-size:13px;color:var(--accent2)">'+u.usuario+'</span><span style="font-size:13px">'+(u.nombre||'—')+'</span><span class="role-chip role-'+u.rol+'">'+u.rol+'</span><span style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+(u.bodega||'Todas')+'</span><span style="font-size:12px;color:'+(u.activo?'var(--accent)':'var(--danger)')+';font-family:var(--mono)">'+(u.activo?'SI':'NO')+'</span><button class="btn btn-warn btn-sm" onclick=\'abrirModalUsuario('+JSON.stringify(u)+')\'> ✎</button><button class="btn btn-danger btn-sm" onclick="confirmarEliminarUsuario(\''+u.usuario+'\')">✕</button>';
+    container.appendChild(row);
+  });
+}
+function abrirModalUsuario(user){
+  document.getElementById('modal-u-titulo').textContent=user?'Editar usuario':'Nuevo usuario';
+  document.getElementById('m-usuario').value=user?user.usuario:'';
+  document.getElementById('m-usuario').disabled=!!user;
+  document.getElementById('m-pass').value='';
+  document.getElementById('m-nombre').value=user?user.nombre:'';
+  document.getElementById('m-rol').value=user?user.rol:'editor';
+  document.getElementById('m-activo').checked=user?user.activo:true;
+  document.getElementById('m-bodega').value=user?(user.bodega||''):'';
+  document.getElementById('modal-usuario').classList.add('open');
+}
+function cerrarModalUsuario(){ document.getElementById('modal-usuario').classList.remove('open'); }
+async function guardarUsuarioModal(){
+  var usuario=document.getElementById('m-usuario').value.trim();
+  var pass=document.getElementById('m-pass').value.trim();
+  var nombre=document.getElementById('m-nombre').value.trim();
+  var rol=document.getElementById('m-rol').value;
+  var activo=document.getElementById('m-activo').checked;
+  if(!usuario){ toast('Ingresa un nombre de usuario','error'); return; }
+  var btn=document.getElementById('btn-modal-guardar');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>';
+  try {
+    var bodegaM=document.getElementById('m-bodega').value.trim().toUpperCase();
+    var data=await apiMaestro('guardarUsuario',{ usuario:usuario, pass:pass, nombre:nombre, rol:rol, activo:activo, bodega:bodegaM });
+    if(data.success){ toast('Usuario guardado ✓','success'); cerrarModalUsuario(); cargarUsuarios(); }
+    else toast('Error: '+data.message,'error');
+  } catch(e){ toast('Error de conexión','error'); }
+  btn.disabled=false; btn.innerHTML='Guardar';
+}
+async function confirmarEliminarUsuario(usuario){
+  if(!confirm('¿Eliminar al usuario "'+usuario+'"?')) return;
+  try {
+    var data=await apiMaestro('eliminarUsuario',{ usuario:usuario });
+    if(data.success){ toast('Eliminado ✓','success'); cargarUsuarios(); }
+    else toast('Error: '+data.message,'error');
+  } catch(e){ toast('Error de conexión','error'); }
+}
+document.getElementById('modal-usuario').addEventListener('click', function(e){ if(e.target===this) cerrarModalUsuario(); });
+
+// ── CONFIG ──
+function cargarConfigUI(){
+  var mUrl = document.getElementById('cfg-maestro-url');
+  if(mUrl) mUrl.value = getMaestroUrl();
+  var sUrl = document.getElementById('cfg-script-url');
+  if(sUrl) sUrl.value = localStorage.getItem('cfg_scriptUrl') || '';
+  renderBodegasLista();
+}
+function guardarConfig(){
+  var mu = document.getElementById('cfg-maestro-url');
+  var su = document.getElementById('cfg-script-url');
+  if(mu && mu.value.trim()) localStorage.setItem('cfg_maestroUrl', mu.value.trim());
+  if(su && su.value.trim()) localStorage.setItem('cfg_scriptUrl',  su.value.trim());
+  toast('Configuración guardada ✓','success');
+}
+
+
+// ── IMAGEN ──
+// DRIVE_FOLDER_ID ya no se usa — imágenes van a ImgBB
+
+function onImageSelected(event){
+  var file = event.target.files[0];
+  if(!file) return;
+  // Mostrar preview local inmediatamente
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var img = new Image();
+    img.onload = function(){
+      // Comprimir a 800px para preview y para subir
+      var canvas = document.createElement('canvas');
+      var w = img.width, h = img.height;
+      var maxSize = 800;
+      if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+      else      { w = Math.round(w * maxSize / h); h = maxSize; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      var b64full = canvas.toDataURL('image/jpeg', 0.75);
+      state.imagenBase64 = b64full; // para preview
+      state.imagenUrl = '';          // se llena al subir
+      document.getElementById('img-preview').src = b64full;
+      document.getElementById('img-preview').classList.add('show');
+      document.getElementById('img-upload-wrap').classList.add('has-img');
+      document.getElementById('img-placeholder').style.display = 'none';
+      document.getElementById('img-btns').style.display = 'flex';
+      toast('Foto lista · subiendo a Drive…', 'loading');
+      // Subir a Google Drive en background
+      subirImagenDrive(canvas, b64full);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+var IMGBB_API_KEY = '880357e1de3755b7f99f311a12e07065';
+
+async function subirImagenDrive(canvas, b64full){
+  try {
+    toast('Subiendo foto…', 'info');
+
+    // Comprimir a 800px calidad 0.75
+    var maxSize = 800;
+    var w = canvas.width, h = canvas.height;
+    var canvas2 = document.createElement('canvas');
+    if(w > maxSize || h > maxSize){
+      if(w > h){ h = Math.round(h * maxSize / w); w = maxSize; }
+      else      { w = Math.round(w * maxSize / h); h = maxSize; }
+    }
+    canvas2.width = w; canvas2.height = h;
+    canvas2.getContext('2d').drawImage(canvas, 0, 0, w, h);
+    var b64 = canvas2.toDataURL('image/jpeg', 0.75).split(',')[1]; // solo datos sin prefijo
+
+    // Subir a ImgBB — permite CORS desde cualquier dominio
+    var form = new FormData();
+    form.append('key', IMGBB_API_KEY);
+    form.append('image', b64);
+
+    var ts = new Date().toISOString().replace(/[:.]/g,'-');
+    var bodega = state.currentUser ? state.currentUser.bodega : 'FOTO';
+    form.append('name', 'INV-' + bodega + '-' + ts);
+
+    var res = await fetch('https://api.imgbb.com/1/upload', {
+      method: 'POST',
+      body: form
+    });
+
+    if(!res.ok) throw new Error('ImgBB error ' + res.status);
+
+    var data = await res.json();
+    if(data.success){
+      state.imagenUrl = data.data.url;
+      toast('Foto subida ✓', 'success');
+    } else {
+      throw new Error(data.error && data.error.message ? data.error.message : 'Error desconocido');
+    }
+  } catch(ex){
+    toast('Error subiendo foto: ' + ex.message, 'error');
+    state.imagenUrl = '';
+  }
+}
+
+function quitarImagen(e){
+  if(e) e.stopPropagation();
+  state.imagenBase64 = '';
+  state.imagenUrl = '';
+  document.getElementById('f-imagen').value = '';
+  document.getElementById('img-preview').src = '';
+  document.getElementById('img-preview').classList.remove('show');
+  document.getElementById('img-upload-wrap').classList.remove('has-img');
+  document.getElementById('img-placeholder').style.display = 'block';
+  document.getElementById('img-btns').style.display = 'none';
+}
+
+// ── TOAST ──
+var toastTimer;
+// ── INFORME CRUZADO ──
+async function cargarBodegasInforme(){
+  var wrap = document.getElementById('informe-bodegas-check');
+  if(!wrap) return;
+  try {
+    var data = await apiMaestro('getBodegas');
+    var bodegas = data.bodegas || [];
+    if(!bodegas.length){
+      wrap.innerHTML='<span style="font-size:12px;color:var(--danger)">No hay bodegas configuradas en la Matriz Central</span>';
+      return;
+    }
+    wrap.innerHTML = bodegas.map(function(b){
+      return '<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;background:var(--surface2);padding:6px 12px;border-radius:var(--radius);border:1px solid var(--border)">'
+        +'<input type="checkbox" class="informe-bodega-cb" value="'+b.codigo+'" data-script="'+b.scriptUrl+'" checked>'
+        +'<span style="font-family:var(--mono);color:var(--accent)">'+b.codigo+'</span>'
+        +(b.label ? '<span style="color:var(--text2);font-size:12px"> — '+b.label+'</span>' : '')
+        +'</label>';
+    }).join('');
+  } catch(e){
+    wrap.innerHTML='<span style="font-size:12px;color:var(--danger)">Error: '+e.message+'</span>';
+  }
+}
+
+function toggleTodasBodegas(checked){
+  document.querySelectorAll('.informe-bodega-cb').forEach(function(cb){ cb.checked = checked; });
+}
+
+async function generarInforme(){
+  var checks = document.querySelectorAll('.informe-bodega-cb:checked');
+  if(!checks.length){ toast('Selecciona al menos una bodega','error'); return; }
+  var bodegas = [];
+  checks.forEach(function(cb){ bodegas.push({ codigo: cb.value, scriptUrl: cb.dataset.script }); });
+  var incluirSimilares = document.getElementById('informe-similares').checked;
+  var statusEl = document.getElementById('informe-status');
+  var btnEl    = document.getElementById('btn-generar-informe');
+  statusEl.style.display='block'; btnEl.disabled=true;
+  var datosBodegas = [];
+  for(var i=0; i<bodegas.length; i++){
+    var b = bodegas[i];
+    statusEl.textContent = 'Leyendo bodega '+b.codigo+' ('+(i+1)+'/'+bodegas.length+')...';
+    try {
+      var res = await fetch(b.scriptUrl+'?action=getResumenCompleto', { method:'GET', redirect:'follow' });
+      var data = await res.json();
+      datosBodegas.push({ codigo: b.codigo, items: data.items||[], error: null });
+    } catch(e){ datosBodegas.push({ codigo: b.codigo, items:[], error: e.message }); }
+  }
+  statusEl.textContent = 'Analizando cruces...';
+  var cruce = cruzarBodegas(datosBodegas, incluirSimilares);
+  statusEl.textContent = 'Generando Excel...';
+  try {
+    generarExcel(cruce, datosBodegas);
+    statusEl.textContent = 'Excel generado y descargado correctamente.';
+    toast('Informe descargado','success');
+  } catch(e){ statusEl.textContent = 'Error: '+e.message; toast('Error generando Excel','error'); }
+  btnEl.disabled = false;
+}
+
+function cruzarBodegas(datosBodegas, incluirSimilares){
+  var mapa = {};
+  datosBodegas.forEach(function(b){
+    b.items.forEach(function(item){
+      var cod = String(item.codigo||'').trim().toUpperCase();
+      if(!cod) return;
+      if(!mapa[cod]) mapa[cod]={};
+      mapa[cod][b.codigo]={ conteo:Number(item.conteo||0), descripcion:String(item.descripcion||''), stock:Number(item.stock||0), diferencia:Number(item.diferencia||0) };
     });
   });
-
-  return { items: items };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  VERIFICAR DUPLICADO — aviso si un código ya fue ingresado
-// ══════════════════════════════════════════════════════════════════
-function verificarDuplicado(codigo) {
-  if (!codigo) return { encontrado: false };
-  codigo = String(codigo).trim().toUpperCase();
-
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESUMEN);
-  if (!sheet || sheet.getLastRow() < 2) return { encontrado: false };
-
-  var lastRow = sheet.getLastRow();
-  // Leer columnas: B=codigo, Q=usuario, R=fecha
-  var data = sheet.getRange(2, 1, lastRow - 1, 17).getValues();
-
-  for (var i = 0; i < data.length; i++) {
-    var codFila = String(data[i][COL_CODIGO - 1]).trim().toUpperCase();
-    if (codFila === codigo) {
-      var usuarioFila = String(data[i][COL_USUARIO_LOG - 1]).trim();
-      var fechaFila   = data[i][COL_FECHA - 1];
-      var fechaStr    = '';
-      if (fechaFila) {
-        try {
-          var d = new Date(fechaFila);
-          fechaStr = d.getDate() + '/' + (d.getMonth()+1) + '/' + d.getFullYear()
-                   + ' ' + d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0');
-        } catch(e){ fechaStr = String(fechaFila); }
+  var cruces=[], faltantes=[], similares=[];
+  var bodegasIds = datosBodegas.map(function(b){ return b.codigo; });
+  Object.keys(mapa).forEach(function(cod){
+    var presencia = mapa[cod];
+    bodegasIds.forEach(function(bA){
+      var itemA = presencia[bA];
+      if(!itemA || itemA.diferencia>=0) return;
+      var faltaCantidad = Math.abs(itemA.diferencia);
+      var cruzadoCon = null;
+      bodegasIds.forEach(function(bB){
+        if(bB===bA) return;
+        var itemB = presencia[bB];
+        if(itemB && itemB.diferencia>0) cruzadoCon={ bodega:bB, sobra:itemB.diferencia };
+      });
+      if(cruzadoCon){
+        cruces.push({ codigo:cod, descripcion:itemA.descripcion, bodegaFalta:bA, falta:faltaCantidad, bodegaSobra:cruzadoCon.bodega, sobra:cruzadoCon.sobra, recomendacion:'Verificar cruce de '+Math.min(faltaCantidad,cruzadoCon.sobra)+' unid. de '+cruzadoCon.bodega+' hacia '+bA });
+      } else {
+        faltantes.push({ codigo:cod, descripcion:itemA.descripcion, bodega:bA, falta:faltaCantidad });
       }
-      return {
-        encontrado: true,
-        usuario:    usuarioFila || 'otro usuario',
-        fecha:      fechaStr
-      };
-    }
-  }
-  return { encontrado: false };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  DRIVE — subida de imágenes desde el script (proxy)
-// ══════════════════════════════════════════════════════════════════
-var SHEET_UPLOADS = 'UPLOADS_TEMP';
-
-function getDriveToken() {
-  try {
-    var token = ScriptApp.getOAuthToken();
-    return { token: token };
-  } catch(e) {
-    return { token: null, error: e.message };
-  }
-}
-
-function subirImagenDrive(body) {
-  try {
-    var b64full  = String(body.imagen  || '');
-    var nombre   = String(body.nombre  || 'foto.jpg');
-    var uploadId = String(body.uploadId || '');
-    var folderId = String(body.folderId || '');
-
-    if(!b64full) return { error: 'Sin imagen' };
-
-    // Decodificar base64
-    var b64 = b64full.indexOf(',') > -1 ? b64full.split(',')[1] : b64full;
-    var decoded = Utilities.base64Decode(b64);
-    var blob = Utilities.newBlob(decoded, 'image/jpeg', nombre);
-
-    // Subir a Drive
-    var folder = folderId ? DriveApp.getFolderById(folderId) : DriveApp.getRootFolder();
-    var file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-
-    var url = 'https://drive.google.com/uc?export=view&id=' + file.getId();
-
-    // Guardar en hoja temporal para que la app pueda consultarla
-    if(uploadId) {
-      var ss = SpreadsheetApp.getActiveSpreadsheet();
-      var sheet = ss.getSheetByName(SHEET_UPLOADS);
-      if(!sheet) {
-        sheet = ss.insertSheet(SHEET_UPLOADS);
-        sheet.getRange(1,1,1,3).setValues([['UPLOAD_ID','URL','TIMESTAMP']]);
-        sheet.hideSheet();
-      }
-      sheet.appendRow([uploadId, url, new Date().toISOString()]);
-    }
-
-    return { success: true, url: url };
-  } catch(e) {
-    return { success: false, error: e.message };
-  }
-}
-
-function getUploadUrl(uploadId) {
-  if(!uploadId) return { url: null };
-  try {
-    var ss    = SpreadsheetApp.getActiveSpreadsheet();
-    var sheet = ss.getSheetByName(SHEET_UPLOADS);
-    if(!sheet) return { url: null };
-    var data = sheet.getDataRange().getValues();
-    for(var i = 1; i < data.length; i++) {
-      if(String(data[i][0]) === String(uploadId)) {
-        return { url: String(data[i][1]) };
-      }
-    }
-    return { url: null }; // aún no disponible
-  } catch(e) {
-    return { url: null, error: e.message };
-  }
-}
-
-function buildResponse(data) {
-  return ContentService.createTextOutput(JSON.stringify(data)).setMimeType(ContentService.MimeType.JSON);
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  doPost — recibe JSON con imagen en base64 (payload grande)
-// ══════════════════════════════════════════════════════════════════
-function doPost(e) {
-  try {
-    var body   = JSON.parse(e.postData.contents);
-    var action = body.action || '';
-    var result;
-    switch(action) {
-      case 'guardarConteo':
-        result = guardarConteo(body);
-        break;
-      case 'subirImagenDrive':
-        result = subirImagenDrive(body);
-        break;
-      default:
-        result = { error: 'Accion POST no reconocida: ' + action };
-    }
-    return buildResponse(result);
-  } catch(err) {
-    return buildResponse({ error: err.message });
-  }
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  INIT
-// ══════════════════════════════════════════════════════════════════
-function initSheets() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-
-  var sheetU = ss.getSheetByName(SHEET_USUARIOS);
-  if (!sheetU) sheetU = ss.insertSheet(SHEET_USUARIOS);
-  if (sheetU.getLastRow() < 1) {
-    sheetU.getRange(1,1,1,6).setValues([['USUARIO','CONTRASENA','ROL','ACTIVO','NOMBRE COMPLETO','BODEGA']]);
-    var h = sheetU.getRange(1,1,1,6);
-    h.setBackground('#1c2537'); h.setFontColor('#00e5a0'); h.setFontWeight('bold');
-    sheetU.setFrozenRows(1);
-  }
-  if (sheetU.getLastRow() < 2) {
-    sheetU.getRange(2,1,3,6).setValues([
-      ['admin','admin123','admin','SI','Administrador',''],
-      ['editor','editor123','editor','SI','Editor Bodega',''],
-      ['lector','lector123','lector','SI','Lector Bodega','']
-    ]);
-  }
-
-  var sheetR = ss.getSheetByName(SHEET_RESPONSABLES);
-  if (!sheetR) sheetR = ss.insertSheet(SHEET_RESPONSABLES);
-  if (sheetR.getLastRow() < 1) {
-    sheetR.getRange(1,1,1,4).setValues([['NOMBRE','','URL APPS SCRIPT','URL SHEET ACTIVO']]);
-    var hr = sheetR.getRange(1,1,1,4);
-    hr.setBackground('#1c2537'); hr.setFontColor('#00e5a0'); hr.setFontWeight('bold');
-    sheetR.setFrozenRows(1);
-    sheetR.setColumnWidth(1, 200);
-  }
-
-  // ── Crear hoja BODEGAS si no existe ──
-  var sheetB = ss.getSheetByName(SHEET_BODEGAS);
-  if (!sheetB) {
-    sheetB = ss.insertSheet(SHEET_BODEGAS);
-    sheetB.getRange(1,1,1,4).setValues([['CODIGO','NOMBRE','URL SCRIPT','URL SHEET']]);
-    var hb = sheetB.getRange(1,1,1,4);
-    hb.setBackground('#1c2537'); hb.setFontColor('#00e5a0'); hb.setFontWeight('bold');
-    sheetB.setFrozenRows(1);
-    sheetB.setColumnWidth(1, 80);
-    sheetB.setColumnWidth(2, 180);
-    sheetB.setColumnWidth(3, 400);
-    sheetB.setColumnWidth(4, 300);
-  }
-
-  return { success: true, message: 'Hojas inicializadas' };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  BODEGAS — CRUD centralizado
-// ══════════════════════════════════════════════════════════════════
-function getBodegas() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_BODEGAS);
-  if (!sheet) return { bodegas: [] };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { bodegas: [] };
-  var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  var bodegas = [];
-  for (var i = 0; i < data.length; i++) {
-    var codigo = String(data[i][0]).trim().toUpperCase();
-    if (!codigo) continue;
-    bodegas.push({
-      codigo:    codigo,
-      label:     String(data[i][1]).trim(),
-      scriptUrl: String(data[i][2]).trim(),
-      sheetUrl:  String(data[i][3]).trim()
     });
-  }
-  return { bodegas: bodegas };
-}
-
-function guardarBodega(params) {
-  var codigo    = String(params.codigo    || '').trim().toUpperCase();
-  var label     = String(params.label     || '').trim();
-  var scriptUrl = String(params.scriptUrl || '').trim();
-  var sheetUrl  = String(params.sheetUrl  || '').trim();
-  if (!codigo) return { success: false, message: 'Codigo requerido' };
-  if (!scriptUrl) return { success: false, message: 'URL Script requerida' };
-
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_BODEGAS);
-  if (!sheet) return { success: false, message: 'Hoja BODEGAS no existe. Ejecuta initSheets()' };
-
-  var lastRow = sheet.getLastRow();
-  // Buscar si ya existe para actualizar
-  if (lastRow >= 2) {
-    var data = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    for (var i = 0; i < data.length; i++) {
-      if (String(data[i][0]).trim().toUpperCase() === codigo) {
-        sheet.getRange(i + 2, 1, 1, 4).setValues([[codigo, label, scriptUrl, sheetUrl]]);
-        return { success: true, message: 'Bodega actualizada: ' + codigo };
-      }
-    }
-  }
-  // Agregar nueva
-  sheet.getRange(lastRow + 1, 1, 1, 4).setValues([[codigo, label, scriptUrl, sheetUrl]]);
-  return { success: true, message: 'Bodega agregada: ' + codigo };
-}
-
-function eliminarBodega(codigo) {
-  if (!codigo) return { success: false, message: 'Codigo requerido' };
-  codigo = codigo.trim().toUpperCase();
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_BODEGAS);
-  if (!sheet) return { success: false, message: 'Hoja BODEGAS no existe' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { success: false, message: 'Sin bodegas registradas' };
-  var data = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  for (var i = 0; i < data.length; i++) {
-    if (String(data[i][0]).trim().toUpperCase() === codigo) {
-      sheet.deleteRow(i + 2);
-      return { success: true, message: 'Bodega eliminada: ' + codigo };
-    }
-  }
-  return { success: false, message: 'Bodega no encontrada: ' + codigo };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  BODEGA (detectar desde SERIES)
-// ══════════════════════════════════════════════════════════════════
-function getBodegaDeSheet() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_SERIES);
-  if (!sheet) return { bodega: '' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { bodega: '' };
-  var data = sheet.getRange(2, S_BODEGA, lastRow - 1, 1).getValues();
-  for (var i = 0; i < data.length; i++) {
-    var val = String(data[i][0]).trim();
-    if (val !== '') return { bodega: val };
-  }
-  return { bodega: '' };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  LOGIN — ahora también devuelve scriptUrl y sheetUrl de la bodega
-// ══════════════════════════════════════════════════════════════════
-function login(params) {
-  var usuario = String(params.usuario || '').trim().toLowerCase();
-  var pass    = String(params.pass    || '').trim();
-  var bodegaIngresada = String(params.bodega || '').trim().toUpperCase();
-
-  if (!usuario || !pass) return { success: false, message: 'Credenciales vacias' };
-
-  var ss    = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_USUARIOS);
-  if (!sheet) return { success: false, message: 'Hoja USUARIOS no existe. Ejecuta initSheets()' };
-
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { success: false, message: 'Sin usuarios registrados' };
-
-  var data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
-  for (var i = 0; i < data.length; i++) {
-    var u              = String(data[i][0]).trim().toLowerCase();
-    var p              = String(data[i][1]).trim();
-    var rol            = String(data[i][2]).trim().toLowerCase();
-    var activo         = String(data[i][3]).trim().toUpperCase();
-    var nombre         = String(data[i][4]).trim();
-    var bodegaAsignada = String(data[i][5]).trim().toUpperCase();
-
-    if (u === usuario && p === pass) {
-      if (activo !== 'SI') return { success: false, message: 'Usuario inactivo. Contacta al administrador.' };
-
-      var bodegaFinal = bodegaIngresada;
-
-      // Para editor/lector: si tiene bodega asignada, forzar esa bodega
-      if (rol !== 'admin' && bodegaAsignada !== '') {
-        if (bodegaAsignada !== bodegaIngresada) {
-          return { success: false, message: 'No tienes permiso para la bodega "' + bodegaIngresada + '". Tu bodega es: ' + bodegaAsignada };
-        }
-        bodegaFinal = bodegaAsignada;
-      }
-
-      // Buscar config de la bodega en hoja BODEGAS
-      var scriptUrl = '';
-      var sheetUrl  = '';
-      var sheetB = ss.getSheetByName(SHEET_BODEGAS);
-      if (sheetB && sheetB.getLastRow() >= 2) {
-        var bData = sheetB.getRange(2, 1, sheetB.getLastRow() - 1, 4).getValues();
-        for (var j = 0; j < bData.length; j++) {
-          if (String(bData[j][0]).trim().toUpperCase() === bodegaFinal) {
-            scriptUrl = String(bData[j][2]).trim();
-            sheetUrl  = String(bData[j][3]).trim();
-            break;
-          }
+  });
+  if(incluirSimilares){
+    var codigos = Object.keys(mapa);
+    for(var i=0; i<codigos.length; i++){
+      for(var j=i+1; j<codigos.length; j++){
+        var codA=codigos[i], codB=codigos[j];
+        var entA=Object.values(mapa[codA])[0], entB=Object.values(mapa[codB])[0];
+        var bodA=Object.keys(mapa[codA])[0], bodB=Object.keys(mapa[codB])[0];
+        if(bodA===bodB) continue;
+        var sim=similitudJaccard(entA.descripcion.toLowerCase(), entB.descripcion.toLowerCase());
+        if(sim>=0.65){
+          similares.push({ codigoA:codA, descripcionA:entA.descripcion, bodegaA:bodA, codigoB:codB, descripcionB:entB.descripcion, bodegaB:bodB, similitud:Math.round(sim*100)+'%', nota:'Posible artículo cruzado — verificar manualmente' });
         }
       }
-
-      return {
-        success:   true,
-        usuario:   u,
-        rol:       rol,
-        nombre:    nombre,
-        bodega:    bodegaFinal,
-        scriptUrl: scriptUrl,   // ← la app lo usará automáticamente
-        sheetUrl:  sheetUrl
-      };
     }
   }
-  return { success: false, message: 'Usuario o contrasena incorrectos' };
+  return { cruces:cruces, faltantes:faltantes, similares:similares };
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  USUARIOS
-// ══════════════════════════════════════════════════════════════════
-function getUsuarios() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_USUARIOS);
-  if (!sheet) return { users: [] };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { users: [] };
-  var data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
-  var users = [];
-  for (var i = 0; i < data.length; i++) {
-    var u = String(data[i][0]).trim();
-    if (!u) continue;
-    users.push({ usuario: u, rol: String(data[i][2]).trim(), activo: String(data[i][3]).trim().toUpperCase() === 'SI', nombre: String(data[i][4]).trim(), bodega: String(data[i][5] || '').trim() });
-  }
-  return { users: users };
+function similitudJaccard(a, b){
+  var wA=new Set(a.split(' ').filter(function(w){ return w.length>2; }));
+  var wB=new Set(b.split(' ').filter(function(w){ return w.length>2; }));
+  if(!wA.size||!wB.size) return 0;
+  var inter=0; wA.forEach(function(w){ if(wB.has(w)) inter++; });
+  return inter/(wA.size+wB.size-inter);
 }
 
-function guardarUsuario(params) {
-  var usuario = String(params.usuario || '').trim().toLowerCase();
-  var pass = String(params.pass || '').trim();
-  var rol = String(params.rol || 'editor').trim().toLowerCase();
-  var activo = (params.activo === 'true' || params.activo === true) ? 'SI' : 'NO';
-  var nombre = String(params.nombre || '').trim();
-  if (!usuario) return { success: false, message: 'Usuario requerido' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_USUARIOS);
-  if (!sheet) return { success: false, message: 'Hoja USUARIOS no existe' };
-  var lastRow = sheet.getLastRow();
-  var targetRow = -1;
-  if (lastRow >= 2) {
-    var col = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    for (var i = 0; i < col.length; i++) {
-      if (String(col[i][0]).trim().toLowerCase() === usuario) { targetRow = i + 2; break; }
-    }
-  }
-  if (targetRow === -1) targetRow = lastRow < 2 ? 2 : lastRow + 1;
-  var finalPass = pass;
-  if (!pass && targetRow <= lastRow) finalPass = String(sheet.getRange(targetRow, 2).getValue()).trim();
-  sheet.getRange(targetRow, 1).setValue(usuario);
-  if (finalPass) sheet.getRange(targetRow, 2).setValue(finalPass);
-  sheet.getRange(targetRow, 3).setValue(rol);
-  sheet.getRange(targetRow, 4).setValue(activo);
-  sheet.getRange(targetRow, 5).setValue(nombre);
-  var bodegaU = String(params.bodega || '').trim();
-  sheet.getRange(targetRow, 6).setValue(bodegaU);
-  return { success: true, message: 'Usuario guardado' };
-}
-
-function eliminarUsuario(usuario) {
-  if (!usuario) return { success: false, message: 'Usuario requerido' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_USUARIOS);
-  if (!sheet) return { success: false, message: 'Hoja no existe' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { success: false, message: 'Sin usuarios' };
-  var col = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  for (var i = 0; i < col.length; i++) {
-    if (String(col[i][0]).trim().toLowerCase() === String(usuario).trim().toLowerCase()) {
-      sheet.deleteRow(i + 2);
-      return { success: true, message: 'Eliminado' };
-    }
-  }
-  return { success: false, message: 'No encontrado' };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  RESPONSABLES
-// ══════════════════════════════════════════════════════════════════
-function getResponsables() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESPONSABLES);
-  if (!sheet) return { responsables: [] };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { responsables: [] };
-  var data = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  var lista = [];
-  for (var i = 0; i < data.length; i++) {
-    var n = String(data[i][0]).trim();
-    if (n) lista.push(n);
-  }
-  return { responsables: lista };
-}
-
-function guardarResponsable(nombre) {
-  var nombreLimpio = String(nombre || '').trim();
-  if (!nombreLimpio) return { success: false, message: 'Nombre requerido' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESPONSABLES);
-  if (!sheet) return { success: false, message: 'Hoja RESPONSABLES no existe. Ejecuta initSheets()' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow >= 2) {
-    var data = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-    for (var i = 0; i < data.length; i++) {
-      if (String(data[i][0]).trim().toLowerCase() === nombreLimpio.toLowerCase()) {
-        return { success: false, message: 'El responsable ya existe' };
-      }
-    }
-  }
-  var nuevaFila = lastRow + 1;
-  if (nuevaFila < 2) nuevaFila = 2;
-  sheet.getRange(nuevaFila, 1).setValue(nombreLimpio);
-  return { success: true, message: 'Responsable agregado' };
-}
-
-function eliminarResponsable(nombre) {
-  var nombreLimpio = String(nombre || '').trim();
-  if (!nombreLimpio) return { success: false, message: 'Nombre requerido' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESPONSABLES);
-  if (!sheet) return { success: false, message: 'Hoja no existe' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { success: false, message: 'Sin responsables' };
-  var data = sheet.getRange(2, 1, lastRow - 1, 1).getValues();
-  for (var i = 0; i < data.length; i++) {
-    if (String(data[i][0]).trim().toLowerCase() === nombreLimpio.toLowerCase()) {
-      sheet.deleteRow(i + 2);
-      return { success: true, message: 'Eliminado' };
-    }
-  }
-  return { success: false, message: 'No encontrado' };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  BUSCAR PRODUCTO — incluye stock (col C)
-// ══════════════════════════════════════════════════════════════════
-function buscarProducto(codigo) {
-  if (!codigo) return { found: false, descripcion: '', stock: '' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_VALORIZADO);
-  if (!sheet) return { found: false, error: 'Pestana no encontrada' };
-  var data = sheet.getDataRange().getValues();
-  var cod = String(codigo).trim().toUpperCase();
-  for (var i = 1; i < data.length; i++) {
-    if (String(data[i][VAL_COD - 1]).trim().toUpperCase() === cod) {
-      return {
-        found: true,
-        descripcion: String(data[i][VAL_DESC - 1] || '(sin descripcion)'),
-        stock: data[i][VAL_STOCK - 1] !== undefined ? data[i][VAL_STOCK - 1] : '',
-        fila: i + 1
-      };
-    }
-  }
-  return { found: false, descripcion: '', stock: '' };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  GUARDAR CONTEO — guarda usuario en col U también
-// ══════════════════════════════════════════════════════════════════
-function guardarConteo(params) {
-  var codigo      = String(params.codigo      || '').trim();
-  var conteo      = String(params.conteo      || '').trim();
-  var ubicacion   = String(params.ubicacion   || '').trim();
-  var responsable = String(params.responsable || '').trim();
-  var usuario     = String(params.usuario     || '').trim();
-
-  if (!codigo)      return { success: false, message: 'Codigo requerido' };
-  if (!conteo)      return { success: false, message: 'Conteo requerido' };
-  if (!ubicacion)   return { success: false, message: 'Ubicacion requerida' };
-  if (!responsable) return { success: false, message: 'Responsable requerido' };
-
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESUMEN);
-  if (!sheet) return { success: false, message: 'Pestana no encontrada: ' + SHEET_RESUMEN };
-
-  var lastRow = sheet.getLastRow();
-  var timestamp = Utilities.formatDate(new Date(), 'America/Guayaquil', 'dd/MM/yyyy HH:mm:ss');
-  // Siempre agregar nueva fila — un artículo puede estar en múltiples ubicaciones
-  var targetRow = lastRow < 2 ? 2 : lastRow + 1;
-
-  sheet.getRange(targetRow, COL_CODIGO).setValue(codigo);
-  sheet.getRange(targetRow, COL_CONTEO).setValue(Number(conteo));
-  sheet.getRange(targetRow, COL_UBICACION).setValue(ubicacion);
-  sheet.getRange(targetRow, COL_RESPONSABLE).setValue(responsable);
-  sheet.getRange(targetRow, COL_USUARIO_LOG).setValue(usuario);  // P
-  sheet.getRange(targetRow, COL_FECHA).setValue(timestamp);       // Q
-  sheet.getRange(targetRow, COL_USUARIO_U).setValue(usuario);     // U
-  var imagen = String(params.imagen || '').trim();
-  if (imagen) {
-    // La app ahora envía la URL de Drive (texto corto), no base64
-    sheet.getRange(targetRow, COL_IMAGEN).setValue(imagen); // K
-  }
-
-  return { success: true, message: 'Guardado en fila ' + targetRow, fila: targetRow };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  GET RESUMEN
-// ══════════════════════════════════════════════════════════════════
-function getResumen() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheetRes = ss.getSheetByName(SHEET_RESUMEN);
-  var sheetVal = ss.getSheetByName(SHEET_VALORIZADO);
-  if (!sheetRes) return { rows: [] };
-  var descMap = {};
-  if (sheetVal) {
-    var valData = sheetVal.getDataRange().getValues();
-    for (var i = 1; i < valData.length; i++) {
-      var c = String(valData[i][0]).trim().toUpperCase();
-      var d = String(valData[i][1]).trim();
-      if (c) descMap[c] = d;
-    }
-  }
-  var lastRow = sheetRes.getLastRow();
-  if (lastRow < 2) return { rows: [] };
-  var data = sheetRes.getRange(2, 1, lastRow - 1, Math.max(COL_FECHA, 17)).getValues();
-  var rows = [];
-  for (var i = 0; i < data.length; i++) {
-    var codigo = String(data[i][COL_CODIGO - 1] || '').trim();
-    if (!codigo) continue;
-    rows.push({
-      codigo: codigo,
-      descripcion: descMap[codigo.toUpperCase()] || '—',
-      conteo: data[i][COL_CONTEO - 1] || '',
-      ubicacion: data[i][COL_UBICACION - 1] || '',
-      responsable: data[i][COL_RESPONSABLE - 1] || '',
-      usuario: data[i][COL_USUARIO_LOG - 1] || '',
-      fecha: data[i][COL_FECHA - 1] ? Utilities.formatDate(new Date(data[i][COL_FECHA - 1]), 'America/Guayaquil', 'dd/MM/yyyy') : ''
+function generarExcel(cruce, datosBodegas){
+  var sheets=[];
+  var resumenRows=[['BODEGA','TOTAL CONTADOS','FALTANTES','SOBRANTES','ESTADO']];
+  datosBodegas.forEach(function(b){
+    var falt=b.items.filter(function(i){ return Number(i.diferencia||0)<0; }).length;
+    var sobr=b.items.filter(function(i){ return Number(i.diferencia||0)>0; }).length;
+    resumenRows.push([b.codigo, b.items.length, falt, sobr, b.error?'ERROR':falt===0&&sobr===0?'OK':'CON DIFERENCIAS']);
+  });
+  sheets.push({ name:'RESUMEN', rows:resumenRows });
+  var crucesRows=[['CODIGO','DESCRIPCION','BODEGA FALTA','CANT FALTA','BODEGA SOBRA','CANT SOBRA','RECOMENDACION']];
+  cruce.cruces.forEach(function(c){ crucesRows.push([c.codigo,c.descripcion,c.bodegaFalta,c.falta,c.bodegaSobra,c.sobra,c.recomendacion]); });
+  if(crucesRows.length===1) crucesRows.push(['Sin cruces detectados','','','','','','']);
+  sheets.push({ name:'CRUCES DETECTADOS', rows:crucesRows });
+  var faltRows=[['CODIGO','DESCRIPCION','BODEGA','CANTIDAD FALTANTE']];
+  cruce.faltantes.forEach(function(f){ faltRows.push([f.codigo,f.descripcion,f.bodega,f.falta]); });
+  if(faltRows.length===1) faltRows.push(['Sin faltantes normales','','','']);
+  sheets.push({ name:'FALTANTES NORMALES', rows:faltRows });
+  var simRows=[['CODIGO A','DESCRIPCION A','BODEGA A','CODIGO B','DESCRIPCION B','BODEGA B','SIMILITUD','NOTA']];
+  cruce.similares.forEach(function(s){ simRows.push([s.codigoA,s.descripcionA,s.bodegaA,s.codigoB,s.descripcionB,s.bodegaB,s.similitud,s.nota]); });
+  if(simRows.length===1) simRows.push(['Sin similares detectados','','','','','','','']);
+  sheets.push({ name:'SIMILARES', rows:simRows });
+  datosBodegas.forEach(function(b){
+    var det=[['CODIGO','DESCRIPCION','STOCK ESPERADO','CONTEO FISICO','DIFERENCIA','RESPONSABLE','FECHA']];
+    b.items.forEach(function(i){ det.push([i.codigo||'',i.descripcion||'',i.stock||0,i.conteo||0,i.diferencia||0,i.responsable||'',i.fecha||'']); });
+    sheets.push({ name:'DET_'+b.codigo, rows:det });
+  });
+  var xml='<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>';
+  xml+='<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">';
+  xml+='<Styles><Style ss:ID="h"><Font ss:Bold="1" ss:Color="#FFFFFF"/><Interior ss:Color="#1c2537" ss:Pattern="Solid"/></Style></Styles>';
+  sheets.forEach(function(sh){
+    xml+='<Worksheet ss:Name="'+escXml(sh.name)+'"><Table>';
+    sh.rows.forEach(function(row,ri){
+      xml+='<Row>';
+      row.forEach(function(cell){
+        var v=cell===null||cell===undefined?'':cell;
+        var t=typeof v==='number'?'Number':'String';
+        var s=ri===0?' ss:StyleID="h"':'';
+        xml+='<Cell'+s+'><Data ss:Type="'+t+'">'+escXml(String(v))+'</Data></Cell>';
+      });
+      xml+='</Row>';
     });
-  }
-  return { rows: rows };
+    xml+='</Table></Worksheet>';
+  });
+  xml+='</Workbook>';
+  var blob=new Blob([xml],{type:'application/vnd.ms-excel;charset=utf-8'});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a');
+  a.href=url; a.download='Informe-Inventario-'+new Date().toISOString().slice(0,10)+'.xls';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
-// ══════════════════════════════════════════════════════════════════
-//  DETALLE DIFERENCIAS — lee valores calculados del sheet
-// ══════════════════════════════════════════════════════════════════
-function getDiferencias() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_DIFERENCIAS);
-  if (!sheet) return { error: 'Hoja DETALLE DIFERENCIAS no encontrada' };
+function escXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
-  // Leer celdas específicas tal como están (con formato del sheet)
-  function getVal(col, row) {
-    var val = sheet.getRange(row, col).getDisplayValue();
-    return val !== undefined && val !== null ? String(val).trim() : '—';
-  }
-
-  return {
-    // Col B
-    totalExistenciaItems:  getVal(2, 2),  // B2
-    totalConteoItems:      getVal(2, 3),  // B3
-    porcentajeAvance:      getVal(2, 4),  // B4
-    noContados:            getVal(2, 5),  // B5
-    itemsPorRevisar:       getVal(2, 6),  // B6
-    // Col C
-    valorTotalInventario:  getVal(3, 2),  // C2
-    valorTotalConteo:      getVal(3, 3),  // C3
-    // Col D
-    itemsFaltantes:        getVal(4, 2),  // D2
-    // Col E
-    valorFaltantes:        getVal(5, 2),  // E2
-    // Col F
-    itemsSobrantes:        getVal(6, 2),  // F2
-    // Col G
-    valorSobrantes:        getVal(7, 2),  // G2
-  };
+function toast(msg, type){
+  type=type||'success';
+  var bar=document.getElementById('status-bar');
+  bar.className='status-bar show '+type;
+  bar.innerHTML=type==='loading'?'<span class="spinner"></span> '+msg:(type==='success'?'✓ ':'✕ ')+msg;
+  clearTimeout(toastTimer);
+  toastTimer=setTimeout(function(){ bar.classList.remove('show'); }, 3500);
 }
-
-// ══════════════════════════════════════════════════════════════════
-//  SERIES
-// ══════════════════════════════════════════════════════════════════
-function validarSerie(codigoArticulo, numSerie, bodega) {
-  if (!codigoArticulo || !numSerie) return { success: false, message: 'Codigo y serie requeridos' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_SERIES);
-  if (!sheet) return { success: false, message: 'Hoja SERIES no encontrada' };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { encontrada: false, codigoOk: false, bodegaOk: false, ok: false };
-  var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-  var codBuscar = String(codigoArticulo).trim().toUpperCase();
-  var serBuscar = String(numSerie).trim().toUpperCase();
-  var bodBuscar = String(bodega || '').trim().toUpperCase();
-  for (var i = 0; i < data.length; i++) {
-    var codFila = String(data[i][0]).trim().toUpperCase();
-    var serFila = String(data[i][2]).trim().toUpperCase();
-    var bodFila = String(data[i][3]).trim().toUpperCase();
-    var descFila = String(data[i][1]).trim();
-    if (serFila === serBuscar) {
-      var codigoOk = codFila === codBuscar;
-      var bodegaOk = bodBuscar === '' || bodFila === bodBuscar;
-      return { encontrada: true, codigoOk: codigoOk, bodegaOk: bodegaOk, ok: codigoOk && bodegaOk, descripcion: descFila, codigoHoja: codFila, bodegaHoja: bodFila, fila: i + 2 };
-    }
-  }
-  return { encontrada: false, codigoOk: false, bodegaOk: false, ok: false };
-}
-
-function guardarSerieFisica(params) {
-  var codigoArticulo = String(params.codigo || '').trim();
-  var numSerie = String(params.serie || '').trim();
-  var bodega = String(params.bodega || '').trim();
-  var forzar = params.forzar === 'true' || params.forzar === true;
-  if (!codigoArticulo || !numSerie) return { success: false, message: 'Codigo y serie requeridos' };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_SERIES);
-  if (!sheet) return { success: false, message: 'Hoja SERIES no encontrada' };
-  var lastRow = sheet.getLastRow();
-  var serBuscar = numSerie.toUpperCase();
-  var codBuscar = codigoArticulo.toUpperCase();
-  var bodBuscar = bodega.toUpperCase();
-  if (lastRow >= 2) {
-    var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
-    for (var i = 0; i < data.length; i++) {
-      var codFila = String(data[i][0]).trim().toUpperCase();
-      var serFila = String(data[i][2]).trim().toUpperCase();
-      var bodFila = String(data[i][3]).trim().toUpperCase();
-      if (serFila === serBuscar) {
-        var codigoOk = codFila === codBuscar;
-        var bodegaOk = bodBuscar === '' || bodFila === bodBuscar;
-        if ((codigoOk && bodegaOk) || forzar) {
-          sheet.getRange(i + 2, 5).setValue(numSerie);
-          return { success: true, message: 'Serie fisica guardada en fila ' + (i + 2) };
-        }
-        return { success: false, message: 'Serie no coincide y no se forzo' };
-      }
-    }
-  }
-  if (forzar) {
-    var newRow = lastRow + 1;
-    sheet.getRange(newRow, 1).setValue(codigoArticulo);
-    sheet.getRange(newRow, 4).setValue(bodega);
-    sheet.getRange(newRow, 5).setValue(numSerie);
-    return { success: true, message: 'Serie fisica guardada como nueva fila' };
-  }
-  return { success: false, message: 'Serie no encontrada en la hoja SERIES' };
-}
-
-function getSeriesPorCodigo(codigo, bodega) {
-  if (!codigo) return { series: [] };
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_SERIES);
-  if (!sheet) return { series: [] };
-  var lastRow = sheet.getLastRow();
-  if (lastRow < 2) return { series: [] };
-  var data = sheet.getRange(2, 1, lastRow - 1, 6).getValues();
-  var codBuscar = String(codigo).trim().toUpperCase();
-  var bodBuscar = String(bodega || '').trim().toUpperCase();
-  var series = [];
-  for (var i = 0; i < data.length; i++) {
-    var codFila = String(data[i][0]).trim().toUpperCase();
-    var bodFila = String(data[i][3]).trim().toUpperCase();
-    var serFila = String(data[i][2]).trim();
-    var sfFila = String(data[i][4]).trim();
-    if (codFila === codBuscar && (bodBuscar === '' || bodFila === bodBuscar)) {
-      series.push({ serie: serFila, serieFisica: sfFila, registrada: sfFila !== '', fila: i + 2 });
-    }
-  }
-  return { series: series };
-}
-
-
-// ══════════════════════════════════════════════════════════════════
-//  GET CONFIG — lee URL del Sheet desde hoja RESPONSABLES col D
-// ══════════════════════════════════════════════════════════════════
-function getConfig() {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(SHEET_RESPONSABLES);
-  var sheetUrl = '';
-  if (sheet && sheet.getLastRow() >= 1) {
-    // Col C = URL Apps Script (referencia), Col D = URL Sheet activo
-    var d2 = sheet.getRange(1, 4).getValue();
-    if (d2) sheetUrl = String(d2).trim();
-  }
-  return { sheetUrl: sheetUrl, spreadsheetId: ss.getId(), spreadsheetName: ss.getName() };
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  TESTS
-// ══════════════════════════════════════════════════════════════════
-function testInit()         { Logger.log(JSON.stringify(initSheets())); }
-function testLogin()        { Logger.log(JSON.stringify(login({ usuario: 'admin', pass: 'admin123' }))); }
-function testResponsables() { Logger.log(JSON.stringify(getResponsables())); }
-function testBodega()       { Logger.log(JSON.stringify(getBodegaDeSheet())); }
-function testDiferencias()  { Logger.log(JSON.stringify(getDiferencias())); }
-function testConfig()       { Logger.log(JSON.stringify(getConfig())); }
+</script>
+</body>
+</html>
