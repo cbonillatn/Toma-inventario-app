@@ -169,6 +169,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <div class="tabs">
       <button class="tab-btn active" data-tab="ingresar" onclick="switchTab(this)">▪ Registrar</button>
       <button class="tab-btn" data-tab="resumen" onclick="switchTab(this)">▪ Resumen</button>
+      <button class="tab-btn" data-tab="reconteo" onclick="switchTab(this)">▪ Reconteo</button>
       <button class="tab-btn" data-tab="reporte" onclick="switchTab(this)">▪ Reporte</button>
       <button class="tab-btn admin-only" data-tab="usuarios" onclick="switchTab(this)" style="display:none">▪ Usuarios</button>
       <button class="tab-btn admin-only" data-tab="informe" onclick="switchTab(this)" style="display:none">▪ Informe</button>
@@ -266,6 +267,54 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
           <div class="empty" id="session-empty">Sin registros aún</div>
         </div>
       </div>
+    </div>
+
+    <!-- RECONTEO -->
+    <div class="panel" id="tab-reconteo">
+
+      <!-- VISTA ADMIN: asignar códigos -->
+      <div id="reconteo-admin-view" style="display:none">
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">Asignar códigos para reconteo</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px;font-family:var(--mono)">Solo aparecen artículos con diferencia. Selecciona los que deseas asignar y elige el usuario responsable.</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+            <div>
+              <label style="display:block;margin-bottom:6px;font-size:13px">Usuario para reconteo</label>
+              <select id="reconteo-usuario-sel" style="margin-bottom:0"></select>
+            </div>
+            <div style="display:flex;align-items:flex-end">
+              <button class="btn btn-primary" onclick="cargarDiferenciasPendientes()" style="width:auto">Cargar diferencias</button>
+            </div>
+          </div>
+          <div id="reconteo-diferencias-lista" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <span style="font-size:12px;color:var(--text2);font-family:var(--mono)" id="reconteo-sel-count">0 seleccionados</span>
+              <div style="display:flex;gap:8px">
+                <button class="btn btn-sm" onclick="seleccionarTodasDif(true)" style="width:auto;font-size:12px">Seleccionar todas</button>
+                <button class="btn btn-sm" onclick="seleccionarTodasDif(false)" style="width:auto;font-size:12px">Ninguna</button>
+              </div>
+            </div>
+            <div id="reconteo-dif-items" style="max-height:320px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)"></div>
+            <div style="margin-top:12px">
+              <button class="btn btn-primary" onclick="asignarReconteo()" style="width:auto" id="btn-asignar-reconteo">Asignar seleccionados</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Asignaciones activas</div>
+          <div id="reconteo-asignaciones-lista"><span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Cargando...</span></div>
+        </div>
+      </div>
+
+      <!-- VISTA USUARIO: ver y resolver su lista -->
+      <div id="reconteo-user-view" style="display:none">
+        <div class="card">
+          <div class="card-title">Mis artículos para reconteo</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:14px;font-family:var(--mono)" id="reconteo-user-desc">Revisa cada artículo y confirma si el conteo fue correcto o ingresa la cantidad real.</p>
+          <div id="reconteo-user-items"></div>
+        </div>
+      </div>
+
     </div>
 
     <!-- RESUMEN -->
@@ -947,6 +996,7 @@ function switchTab(btn){
   if(btn.dataset.tab==='usuarios') cargarUsuarios();
   if(btn.dataset.tab==='reporte') cargarReporte();
   if(btn.dataset.tab==='informe') cargarBodegasInforme();
+  if(btn.dataset.tab==='reconteo') cargarReconteo();
 }
 
 // ── VALIDACIÓN ──
@@ -1487,6 +1537,232 @@ function quitarImagen(e){
 
 // ── TOAST ──
 var toastTimer;
+// ══════════════════════════════════════════════════════════════════
+//  RECONTEO
+// ══════════════════════════════════════════════════════════════════
+function cargarReconteo(){
+  var esAdmin = state.currentUser && state.currentUser.rol === 'admin';
+  document.getElementById('reconteo-admin-view').style.display = esAdmin ? 'block' : 'none';
+  document.getElementById('reconteo-user-view').style.display  = esAdmin ? 'none'  : 'block';
+  if(esAdmin){
+    cargarUsuariosReconteoSelect();
+    cargarAsignacionesActivas();
+  } else {
+    cargarMisReconteos();
+  }
+}
+
+// ── Admin: cargar usuarios en select ──
+async function cargarUsuariosReconteoSelect(){
+  var sel = document.getElementById('reconteo-usuario-sel');
+  try {
+    var data = await apiMaestro('getUsuarios');
+    var users = (data.users||[]).filter(function(u){ return u.activo && u.rol !== 'admin'; });
+    sel.innerHTML = '<option value="">— Selecciona usuario —</option>' +
+      users.map(function(u){
+        return '<option value="'+u.usuario+'">'+(u.nombre||u.usuario)+' ('+u.usuario+')</option>';
+      }).join('');
+  } catch(e){ sel.innerHTML='<option>Error cargando usuarios</option>'; }
+}
+
+// ── Admin: cargar artículos con diferencia ──
+async function cargarDiferenciasPendientes(){
+  var usuario = document.getElementById('reconteo-usuario-sel').value;
+  if(!usuario){ toast('Selecciona un usuario primero','error'); return; }
+  var lista = document.getElementById('reconteo-diferencias-lista');
+  var items  = document.getElementById('reconteo-dif-items');
+  items.innerHTML = '<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2)"><span class="spinner"></span> Cargando diferencias...</div>';
+  lista.style.display = 'block';
+  try {
+    var data = await api('getResumenCompleto');
+    var diffs = (data.items||[]).filter(function(i){
+      return i.diferencia !== '' && Number(i.diferencia) !== 0 && i.conteo !== '';
+    });
+    if(!diffs.length){
+      items.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2)">No hay artículos con diferencia.</div>';
+      return;
+    }
+    items.innerHTML = diffs.map(function(item){
+      var dif = Number(item.diferencia);
+      var color = dif < 0 ? 'var(--danger)' : 'var(--accent)';
+      var signo = dif > 0 ? '+' : '';
+      return '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer">'
+        +'<input type="checkbox" class="dif-cb" value="'+item.codigo+'" data-desc="'+(item.descripcion||'')+'" data-stock="'+item.stock+'" data-conteo="'+item.conteo+'" data-dif="'+item.diferencia+'" onchange="actualizarConteoSel()">'
+        +'<div style="flex:1;min-width:0">'
+        +'<div style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+item.codigo+'</div>'
+        +'<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+( item.descripcion||'—')+'</div>'
+        +'</div>'
+        +'<div style="text-align:right;flex-shrink:0">'
+        +'<div style="font-size:12px;color:var(--text2)">Stock: '+item.stock+' | Conteo: '+item.conteo+'</div>'
+        +'<div style="font-size:13px;font-weight:500;color:'+color+'">'+signo+dif+'</div>'
+        +'</div>'
+        +'</label>';
+    }).join('');
+    actualizarConteoSel();
+  } catch(e){ items.innerHTML='<div style="padding:16px;color:var(--danger);font-size:13px">Error: '+e.message+'</div>'; }
+}
+
+function actualizarConteoSel(){
+  var n = document.querySelectorAll('.dif-cb:checked').length;
+  document.getElementById('reconteo-sel-count').textContent = n + ' seleccionado(s)';
+}
+
+function seleccionarTodasDif(val){
+  document.querySelectorAll('.dif-cb').forEach(function(cb){ cb.checked=val; });
+  actualizarConteoSel();
+}
+
+// ── Admin: asignar reconteo ──
+async function asignarReconteo(){
+  var usuario = document.getElementById('reconteo-usuario-sel').value;
+  if(!usuario){ toast('Selecciona un usuario','error'); return; }
+  var checks = document.querySelectorAll('.dif-cb:checked');
+  if(!checks.length){ toast('Selecciona al menos un artículo','error'); return; }
+  var codigos = [];
+  checks.forEach(function(cb){
+    codigos.push({ codigo:cb.value, descripcion:cb.dataset.desc, stock:cb.dataset.stock, conteoOriginal:cb.dataset.conteo, diferencia:cb.dataset.dif });
+  });
+  var btn = document.getElementById('btn-asignar-reconteo');
+  btn.disabled=true; btn.textContent='Asignando...';
+  try {
+    var data = await api('asignarReconteo', { usuario:usuario, codigos:JSON.stringify(codigos) });
+    if(data.success){
+      toast('Reconteo asignado a '+usuario+' ✓','success');
+      cargarAsignacionesActivas();
+      seleccionarTodasDif(false);
+    } else { toast(data.message||'Error al asignar','error'); }
+  } catch(e){ toast('Error: '+e.message,'error'); }
+  btn.disabled=false; btn.textContent='Asignar seleccionados';
+}
+
+// ── Admin: ver asignaciones activas ──
+async function cargarAsignacionesActivas(){
+  var el = document.getElementById('reconteo-asignaciones-lista');
+  el.innerHTML='<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Cargando...</span>';
+  try {
+    var data = await api('getAsignacionesReconteo');
+    var items = data.items||[];
+    if(!items.length){ el.innerHTML='<span style="font-size:12px;color:var(--text2);font-family:var(--mono)">Sin asignaciones activas.</span>'; return; }
+    // Agrupar por usuario
+    var grupos={};
+    items.forEach(function(i){
+      if(!grupos[i.usuario]) grupos[i.usuario]=[];
+      grupos[i.usuario].push(i);
+    });
+    el.innerHTML = Object.keys(grupos).map(function(usr){
+      var lista = grupos[usr];
+      var pendientes = lista.filter(function(i){ return i.estado==='pendiente'; }).length;
+      var resueltos  = lista.filter(function(i){ return i.estado!=='pendiente'; }).length;
+      return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">'
+        +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'
+        +'<span style="font-size:13px;font-weight:500">'+usr+'</span>'
+        +'<div style="display:flex;gap:6px">'
+        +'<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2)">'+pendientes+' pendientes</span>'
+        +'<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,229,160,.15);color:var(--accent)">'+resueltos+' resueltos</span>'
+        +'</div></div>'
+        +'<div style="display:flex;flex-wrap:wrap;gap:6px">'
+        +lista.map(function(i){
+          var bg = i.estado==='pendiente' ? 'var(--surface2)' : i.estado==='corregido' ? 'rgba(0,229,160,.1)' : 'rgba(235,87,87,.1)';
+          var col= i.estado==='pendiente' ? 'var(--text2)' : i.estado==='corregido' ? 'var(--accent)' : 'var(--danger)';
+          return '<span style="font-size:11px;font-family:var(--mono);padding:3px 8px;border-radius:4px;background:'+bg+';color:'+col+'">'+i.codigo+'</span>';
+        }).join('')
+        +'</div></div>';
+    }).join('');
+  } catch(e){ el.innerHTML='<span style="font-size:12px;color:var(--danger)">Error: '+e.message+'</span>'; }
+}
+
+// ── Usuario: ver su lista de reconteo ──
+async function cargarMisReconteos(){
+  var el = document.getElementById('reconteo-user-items');
+  el.innerHTML='<div style="text-align:center;padding:20px"><span class="spinner"></span></div>';
+  try {
+    var data = await api('getMisReconteos', { usuario: state.currentUser.usuario });
+    var items = data.items||[];
+    if(!items.length){
+      el.innerHTML='<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2)">No tienes artículos asignados para reconteo.</div>';
+      return;
+    }
+    el.innerHTML = items.map(function(item, idx){
+      var dif = Number(item.diferencia);
+      var color = dif < 0 ? 'var(--danger)' : 'var(--accent)';
+      var signo = dif > 0 ? '+' : '';
+      var resuelto = item.estado !== 'pendiente';
+      var estadoBadge = resuelto
+        ? (item.estado==='corregido'
+            ? '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,229,160,.15);color:var(--accent)">✓ Corregido</span>'
+            : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(235,87,87,.15);color:var(--danger)">✓ Diferencia confirmada</span>')
+        : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2)">Pendiente</span>';
+      return '<div style="border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px" id="reconteo-item-'+idx+'">'
+        +'<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">'
+        +'<div>'
+        +'<div style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+item.codigo+'</div>'
+        +'<div style="font-size:14px;font-weight:500;margin-top:2px">'+( item.descripcion||'—')+'</div>'
+        +'</div>'+estadoBadge+'</div>'
+        +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;text-align:center">'
+        +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Stock esperado</div><div style="font-size:16px;font-weight:500">'+item.stock+'</div></div>'
+        +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Conteo original</div><div style="font-size:16px;font-weight:500">'+item.conteoOriginal+'</div></div>'
+        +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Diferencia</div><div style="font-size:16px;font-weight:500;color:'+color+'">'+signo+dif+'</div></div>'
+        +'</div>'
+        +(resuelto ? '' :
+          '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+          +'<button class="btn btn-warn btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="mostrarCorreccion(this)" style="width:auto">✎ Corregir conteo</button>'
+          +'<button class="btn btn-danger btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="confirmarDiferencia(this)" style="width:auto">✓ Confirmar diferencia</button>'
+          +'<div id="correccion-form-'+idx+'" style="display:none;width:100%;margin-top:8px;display:none">'
+          +'<div style="display:flex;gap:8px;align-items:center">'
+          +'<label style="font-size:13px;white-space:nowrap">Nueva cantidad:</label>'
+          +'<input type="number" id="nueva-cantidad-'+idx+'" style="width:100px;margin-bottom:0" min="0" placeholder="0">'
+          +'<button class="btn btn-primary btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="guardarCorreccion(this)" style="width:auto">Guardar</button>'
+          +'<button class="btn btn-sm" onclick="cancelarCorreccion('+idx+')" style="width:auto">Cancelar</button>'
+          +'</div></div>'
+          +'</div>')
+        +'</div>';
+    }).join('');
+  } catch(e){ el.innerHTML='<div style="color:var(--danger);font-size:13px;padding:12px">Error: '+e.message+'</div>'; }
+}
+
+function mostrarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.dataset.codigo; var rowIndex=btn.dataset.row;
+  var form = document.getElementById('correccion-form-'+idx);
+  if(form) form.style.display='block';
+}
+function cancelarCorreccion(idx){
+  var form = document.getElementById('correccion-form-'+idx);
+  if(form) form.style.display='none';
+}
+
+async function guardarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.dataset.codigo; var rowIndex=btn.dataset.row;
+  var input = document.getElementById('nueva-cantidad-'+idx);
+  var nuevaCantidad = input ? input.value.trim() : '';
+  if(nuevaCantidad===''){ toast('Ingresa la cantidad correcta','error'); return; }
+  try {
+    var data = await api('resolverReconteo', {
+      codigo: codigo,
+      rowIndex: rowIndex,
+      accion: 'corregir',
+      nuevaCantidad: nuevaCantidad,
+      usuario: state.currentUser.usuario
+    });
+    if(data.success){
+      toast('Conteo corregido ✓','success');
+      cargarMisReconteos();
+    } else { toast(data.message||'Error','error'); }
+  } catch(e){ toast('Error: '+e.message,'error'); }
+}
+
+async function confirmarDiferencia(btn){ var idx=btn.dataset.idx; var codigo=btn.dataset.codigo; var rowIndex=btn.dataset.row;
+  try {
+    var data = await api('resolverReconteo', {
+      codigo: codigo,
+      rowIndex: rowIndex,
+      accion: 'confirmar',
+      usuario: state.currentUser.usuario
+    });
+    if(data.success){
+      toast('Diferencia confirmada ✓','success');
+      cargarMisReconteos();
+    } else { toast(data.message||'Error','error'); }
+  } catch(e){ toast('Error: '+e.message,'error'); }
+}
+
 // ── INFORME CRUZADO ──
 async function cargarBodegasInforme(){
   var wrap = document.getElementById('informe-bodegas-check');
