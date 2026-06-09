@@ -342,71 +342,85 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 
     <!-- REPORTE DIFERENCIAS -->
     <div class="panel" id="tab-reporte">
-      <div class="card">
+      <div class="card" style="margin-bottom:12px">
         <div class="card-title" style="justify-content:space-between">
           <span style="display:flex;align-items:center;gap:8px"><span style="width:3px;height:14px;background:var(--accent);border-radius:2px;display:block"></span>Reporte de diferencias</span>
           <button class="btn btn-secondary btn-sm" onclick="cargarReporte()">↻ Actualizar</button>
         </div>
         <p style="font-size:12px;color:var(--text2);margin-bottom:20px;font-family:var(--mono)">Datos en tiempo real desde la hoja DETALLE DIFERENCIAS</p>
 
-        <!-- Fila 1: Avance general -->
-        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Avance del inventario</div>
-        <div class="dif-grid" style="margin-bottom:24px">
-          <div class="dif-card highlight">
-            <div class="dif-label">Total ítems existentes</div>
-            <div class="dif-value" id="d-totalExistencia">—</div>
+        <!-- KPIs principales -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:20px">
+          <div style="background:linear-gradient(135deg,rgba(0,229,160,.15),rgba(0,229,160,.05));border:1px solid rgba(0,229,160,.3);border-radius:var(--radius);padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--accent);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Avance</div>
+            <div style="font-size:32px;font-weight:500;color:var(--accent)" id="d-avance">—</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px"><span id="d-totalConteo">—</span> / <span id="d-totalExistencia">—</span> ítems</div>
           </div>
-          <div class="dif-card highlight">
-            <div class="dif-label">Total ítems contados</div>
-            <div class="dif-value" id="d-totalConteo">—</div>
+          <div style="background:linear-gradient(135deg,rgba(235,87,87,.15),rgba(235,87,87,.05));border:1px solid rgba(235,87,87,.3);border-radius:var(--radius);padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--danger);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Faltantes</div>
+            <div style="font-size:32px;font-weight:500;color:var(--danger)" id="d-itemsFaltantes">—</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px" id="d-valorFaltantes">—</div>
           </div>
-          <div class="dif-card info">
-            <div class="dif-label">% Avance</div>
-            <div class="dif-value" id="d-avance">—</div>
+          <div style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);padding:16px;text-align:center">
+            <div style="font-size:11px;color:#f59e0b;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sobrantes</div>
+            <div style="font-size:32px;font-weight:500;color:#f59e0b" id="d-itemsSobrantes">—</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px" id="d-valorSobrantes">—</div>
           </div>
+        </div>
+
+        <!-- Gráficos lado a lado -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <!-- Donut avance -->
+          <div style="background:var(--surface2);border-radius:var(--radius);padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Avance del conteo</div>
+            <canvas id="chart-avance" width="180" height="180" style="max-width:180px;margin:0 auto;display:block"></canvas>
+            <div style="display:flex;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#00e5a0;display:inline-block"></span>Contados</span>
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3548;display:inline-block"></span>Pendientes</span>
+            </div>
+          </div>
+          <!-- Donut diferencias -->
+          <div style="background:var(--surface2);border-radius:var(--radius);padding:16px;text-align:center">
+            <div style="font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">Estado del inventario</div>
+            <canvas id="chart-estado" width="180" height="180" style="max-width:180px;margin:0 auto;display:block"></canvas>
+            <div style="display:flex;justify-content:center;gap:12px;margin-top:10px;flex-wrap:wrap">
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#00e5a0;display:inline-block"></span>OK</span>
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#eb5757;display:inline-block"></span>Faltantes</span>
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#f59e0b;display:inline-block"></span>Sobrantes</span>
+              <span style="font-size:11px;display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;border-radius:50%;background:#2a3548;display:inline-block"></span>Sin contar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div style="margin-bottom:20px">
+          <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px">
+            <span>Progreso del inventario</span>
+            <span id="d-avance-bar-label">—</span>
+          </div>
+          <div style="height:8px;background:var(--surface2);border-radius:4px;overflow:hidden">
+            <div id="d-progress-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#00e5a0,#00b37a);border-radius:4px;transition:width .6s ease"></div>
+          </div>
+        </div>
+
+        <!-- Métricas secundarias -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
           <div class="dif-card warn">
             <div class="dif-label">No contados</div>
             <div class="dif-value" id="d-noContados">—</div>
           </div>
-          <div class="dif-card warn">
-            <div class="dif-label">Ítems por revisar</div>
-            <div class="dif-value" id="d-porRevisar">—</div>
-          </div>
-        </div>
-
-        <!-- Fila 2: Valores -->
-        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Valorización</div>
-        <div class="dif-grid" style="margin-bottom:24px">
           <div class="dif-card info">
-            <div class="dif-label">Valor total inventario</div>
+            <div class="dif-label">Valor inventario</div>
             <div class="dif-value" id="d-valorInventario">—</div>
           </div>
           <div class="dif-card info">
-            <div class="dif-label">Valor total conteo</div>
+            <div class="dif-label">Valor conteo</div>
             <div class="dif-value" id="d-valorConteo">—</div>
           </div>
         </div>
 
-        <!-- Fila 3: Diferencias -->
-        <div style="margin-bottom:12px;font-family:var(--mono);font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:.15em">Diferencias</div>
-        <div class="dif-grid">
-          <div class="dif-card danger">
-            <div class="dif-label">Ítems faltantes</div>
-            <div class="dif-value" id="d-itemsFaltantes">—</div>
-          </div>
-          <div class="dif-card danger">
-            <div class="dif-label">Valor faltantes</div>
-            <div class="dif-value" id="d-valorFaltantes">—</div>
-          </div>
-          <div class="dif-card warn">
-            <div class="dif-label">Ítems sobrantes</div>
-            <div class="dif-value" id="d-itemsSobrantes">—</div>
-          </div>
-          <div class="dif-card warn">
-            <div class="dif-label">Valor sobrantes</div>
-            <div class="dif-value" id="d-valorSobrantes">—</div>
-          </div>
-        </div>
+        <!-- Ítems por revisar (oculto, solo para compatibilidad) -->
+        <span id="d-porRevisar" style="display:none">—</span>
       </div>
     </div>
 
@@ -1299,25 +1313,99 @@ function filtrarTabla(){
 
 // ── REPORTE DIFERENCIAS ──
 async function cargarReporte(){
-  var ids=['d-totalExistencia','d-totalConteo','d-avance','d-noContados','d-porRevisar','d-valorInventario','d-valorConteo','d-itemsFaltantes','d-valorFaltantes','d-itemsSobrantes','d-valorSobrantes'];
-  ids.forEach(function(id){ document.getElementById(id).innerHTML='<span class="spinner" style="width:12px;height:12px"></span>'; });
+  var ids=['d-totalExistencia','d-totalConteo','d-avance','d-noContados','d-porRevisar',
+           'd-valorInventario','d-valorConteo','d-itemsFaltantes','d-valorFaltantes',
+           'd-itemsSobrantes','d-valorSobrantes'];
+  ids.forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.innerHTML='<span class="spinner" style="width:12px;height:12px"></span>';
+  });
   try {
     var data=await api('getDiferencias');
-    if(data.error){ ids.forEach(function(id){ document.getElementById(id).textContent='Error'; }); toast('Error: '+data.error,'error'); return; }
-    document.getElementById('d-totalExistencia').textContent = data.totalExistenciaItems || '—';
-    document.getElementById('d-totalConteo').textContent     = data.totalConteoItems     || '—';
-    document.getElementById('d-avance').textContent          = data.porcentajeAvance     || '—';
-    document.getElementById('d-noContados').textContent      = data.noContados           || '—';
-    document.getElementById('d-porRevisar').textContent      = data.itemsPorRevisar      || '—';
-    document.getElementById('d-valorInventario').textContent = data.valorTotalInventario  || '—';
-    document.getElementById('d-valorConteo').textContent     = data.valorTotalConteo      || '—';
-    document.getElementById('d-itemsFaltantes').textContent  = data.itemsFaltantes        || '—';
-    document.getElementById('d-valorFaltantes').textContent  = data.valorFaltantes        || '—';
-    document.getElementById('d-itemsSobrantes').textContent  = data.itemsSobrantes        || '—';
-    document.getElementById('d-valorSobrantes').textContent  = data.valorSobrantes        || '—';
+    if(data.error){ ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent='Error'; }); toast('Error: '+data.error,'error'); return; }
+
+    var totalExist  = Number(data.totalExistenciaItems)||0;
+    var totalConteo = Number(data.totalConteoItems)||0;
+    var faltantes   = Number(data.itemsFaltantes)||0;
+    var sobrantes   = Number(data.itemsSobrantes)||0;
+    var noContados  = Number(data.noContados)||0;
+    var pct         = data.porcentajeAvance || '0%';
+    var pctNum      = parseFloat(pct)||0;
+    var ok          = totalConteo - faltantes - sobrantes;
+    if(ok<0) ok=0;
+
+    document.getElementById('d-totalExistencia').textContent = totalExist;
+    document.getElementById('d-totalConteo').textContent     = totalConteo;
+    document.getElementById('d-avance').textContent          = pct;
+    document.getElementById('d-noContados').textContent      = noContados;
+    document.getElementById('d-porRevisar').textContent      = data.itemsPorRevisar||'—';
+    document.getElementById('d-valorInventario').textContent = data.valorTotalInventario||'—';
+    document.getElementById('d-valorConteo').textContent     = data.valorTotalConteo||'—';
+    document.getElementById('d-itemsFaltantes').textContent  = faltantes;
+    document.getElementById('d-valorFaltantes').textContent  = data.valorFaltantes||'—';
+    document.getElementById('d-itemsSobrantes').textContent  = sobrantes;
+    document.getElementById('d-valorSobrantes').textContent  = data.valorSobrantes||'—';
+
+    // Barra de progreso
+    var bar = document.getElementById('d-progress-bar');
+    var barLabel = document.getElementById('d-avance-bar-label');
+    if(bar){ bar.style.width = Math.min(pctNum,100)+'%'; }
+    if(barLabel){ barLabel.textContent = pct + ' (' + totalConteo + ' de ' + totalExist + ')'; }
+
+    // Dibujar gráficos
+    dibujarDonut('chart-avance', [totalConteo, Math.max(0,totalExist-totalConteo)], ['#00e5a0','#2a3548'], pct);
+    dibujarDonut('chart-estado', [ok, faltantes, sobrantes, noContados], ['#00e5a0','#eb5757','#f59e0b','#2a3548'], '');
+
   } catch(e){
-    ids.forEach(function(id){ document.getElementById(id).textContent='—'; });
+    ids.forEach(function(id){ var el=document.getElementById(id); if(el) el.textContent='—'; });
     toast('Error al cargar reporte: '+e.message,'error');
+  }
+}
+
+function dibujarDonut(canvasId, valores, colores, labelCentro){
+  var canvas = document.getElementById(canvasId);
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W/2, cy = H/2;
+  var radio = Math.min(W,H)/2 - 8;
+  var grosor = radio * 0.38;
+  ctx.clearRect(0,0,W,H);
+
+  var total = valores.reduce(function(a,b){ return a+b; },0);
+  if(total === 0){
+    // Círculo vacío
+    ctx.beginPath(); ctx.arc(cx,cy,radio,0,Math.PI*2);
+    ctx.strokeStyle='#2a3548'; ctx.lineWidth=grosor; ctx.stroke();
+    return;
+  }
+
+  var startAngle = -Math.PI/2;
+  valores.forEach(function(val, i){
+    if(val<=0) return;
+    var slice = (val/total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, radio, startAngle, startAngle+slice);
+    ctx.strokeStyle = colores[i] || '#888';
+    ctx.lineWidth = grosor;
+    ctx.lineCap = 'butt';
+    ctx.stroke();
+    // Separador sutil
+    ctx.beginPath();
+    ctx.arc(cx, cy, radio, startAngle+slice-0.01, startAngle+slice+0.01);
+    ctx.strokeStyle = '#111827';
+    ctx.lineWidth = grosor+2;
+    ctx.stroke();
+    startAngle += slice;
+  });
+
+  // Label central
+  if(labelCentro){
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(labelCentro, cx, cy);
   }
 }
 
@@ -1707,14 +1795,15 @@ async function cargarMisReconteos(){
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           +'<button class="btn btn-warn btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="mostrarCorreccion(this)" style="width:auto">✎ Corregir conteo</button>'
           +'<button class="btn btn-danger btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="confirmarDiferencia(this)" style="width:auto">✓ Confirmar diferencia</button>'
-          +'<div id="correccion-form-'+idx+'" style="display:none;width:100%;margin-top:8px;display:none">'
-          +'<div style="display:flex;gap:8px;align-items:center">'
-          +'<label style="font-size:13px;white-space:nowrap">Nueva cantidad:</label>'
-          +'<input type="number" id="nueva-cantidad-'+idx+'" style="width:100px;margin-bottom:0" min="0" placeholder="0">'
-          +'<button class="btn btn-primary btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="guardarCorreccion(this)" style="width:auto">Guardar</button>'
-          +'<button class="btn btn-sm" onclick="cancelarCorreccion('+idx+')" style="width:auto">Cancelar</button>'
-          +'</div></div>'
-          +'</div>')
+          +'<div id="correccion-form-'+idx+'" style="display:none;width:100%;margin-top:10px">'
+          +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'
+          +'<div><label style="display:block;font-size:12px;margin-bottom:4px;color:var(--text2)">Nueva cantidad</label>'
+          +'<input type="number" id="nueva-cantidad-'+idx+'" style="margin-bottom:0;width:100%" min="0" placeholder="0"></div>'
+          +'<div><label style="display:block;font-size:12px;margin-bottom:4px;color:var(--text2)">Ubicación del reconteo</label>'
+          +'<input type="text" id="ubicacion-rec-'+idx+'" style="margin-bottom:0;width:100%" placeholder="Ej: Estante A3"></div></div>'
+          +'<div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="guardarCorreccion(this)" style="width:auto;flex:1">Guardar corrección</button>'
+          +'<button class="btn btn-sm" onclick="cancelarCorreccion('+idx+')" style="width:auto">Cancelar</button></div></div>')
+        +'</div>'
         +'</div>';
     }).join('');
   } catch(e){ el.innerHTML='<div style="color:var(--danger);font-size:13px;padding:12px">Error: '+e.message+'</div>'; }
@@ -1731,7 +1820,9 @@ function cancelarCorreccion(idx){
 
 async function guardarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.dataset.codigo; var rowIndex=btn.dataset.row;
   var input = document.getElementById('nueva-cantidad-'+idx);
+  var ubicInput = document.getElementById('ubicacion-rec-'+idx);
   var nuevaCantidad = input ? input.value.trim() : '';
+  var ubicacion = ubicInput ? ubicInput.value.trim() : '';
   if(nuevaCantidad===''){ toast('Ingresa la cantidad correcta','error'); return; }
   try {
     var data = await api('resolverReconteo', {
@@ -1739,6 +1830,7 @@ async function guardarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.d
       rowIndex: rowIndex,
       accion: 'corregir',
       nuevaCantidad: nuevaCantidad,
+      ubicacion: ubicacion,
       usuario: state.currentUser.usuario
     });
     if(data.success){
