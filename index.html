@@ -532,7 +532,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
       <div style="font-family:var(--mono);font-size:11px;color:var(--accent);letter-spacing:.15em;text-transform:uppercase;margin-bottom:4px">Ingreso de Series</div>
       <div style="font-size:13px;color:var(--text2)">Escanea o ingresa cada número de serie</div>
     </div>
-    <button class="btn btn-secondary btn-sm" onclick="finalizarSeries()">Finalizar ✓</button>
+    <div style="text-align:right">
+      <div style="font-size:11px;color:var(--accent);font-family:var(--mono);margin-bottom:4px" id="sp-series-count">0 ingresada(s)</div>
+      <button class="btn btn-secondary btn-sm" onclick="finalizarSeries()">Finalizar ✓</button>
+    </div>
   </div>
   <div class="series-main">
     <div class="series-badge">
@@ -1103,6 +1106,10 @@ function iniciarGuardado(){
     imagen: state.imagenUrl || '',
   };
   state.seriesIngresadas = [];
+  state.seriesPendientesGuardar = [];
+  state.catalogoSeries = {};
+  var counter = document.getElementById('sp-series-count');
+  if(counter) counter.textContent = '0 ingresada(s)';
   // Mostrar modal de confirmación
   document.getElementById('conf-codigo').textContent = codigo;
   document.getElementById('conf-desc').textContent = state.formActual.descripcion;
@@ -1175,67 +1182,113 @@ async function abrirPanelSeries(){
 }
 async function cargarSeriesEsperadas(codigo, bodega){
   var container=document.getElementById('sp-esperadas-list');
-  container.innerHTML='<div class="empty">Cargando…</div>';
+  container.innerHTML='<div class="empty">Cargando catálogo de series…</div>';
+  state.seriesPendientesGuardar = [];
+  state.catalogoSeries = {};
   try {
     var data = await api('getSeriesPorCodigo', { codigo:codigo, bodega:bodega });
     var series = data.series || [];
+    // Construir catálogo local para validación instantánea sin viajes al servidor
+    series.forEach(function(s){
+      var key = String(s.serie||s).trim().toUpperCase();
+      state.catalogoSeries[key] = {
+        codigoHoja: String(s.codigo||codigo).trim().toUpperCase(),
+        bodegaHoja: String(s.bodega||bodega).trim().toUpperCase()
+      };
+    });
     if(!series.length){ container.innerHTML='<div class="empty">No hay series registradas para este código/bodega</div>'; return; }
     container.innerHTML='';
     series.forEach(function(s){
       var div=document.createElement('div');
       div.className='serie-item'+(s.registrada?' ok':'');
-      div.innerHTML='<span class="serie-num">'+(s.serie||'—')+'</span><span class="serie-status '+(s.registrada?'serie-ok':'')+'" style="'+(s.registrada?'':'background:rgba(122,139,168,.15);color:var(--text2)')+'">'+(s.registrada?'✓ Ya registrada':'Pendiente')+'</span>';
+      div.innerHTML='<span class="serie-num">'+(s.serie||'—')+'</span><span class="serie-status '+(s.registrada?'serie-ok':'')+'" style="'+(s.registrada?'':'background:rgba(122,139,168,.15);color:var(--text2)')+'">'+(s.registrada?'\u2713 Ya registrada':'Pendiente')+'</span>';
       container.appendChild(div);
     });
   } catch(e){ container.innerHTML='<div class="empty" style="color:var(--danger)">Error al cargar series</div>'; }
 }
 
 var resolverModal = null;
-async function agregarSerie(){
-  var input=document.getElementById('serie-input');
-  var numSerie=input.value.trim();
+// ── CATÁLOGO LOCAL DE SERIES (cargado al abrir el panel) ──
+// state.catalogoSeries = { 'SERIE123': { codigoHoja:'COD', bodegaHoja:'BQEF' }, ... }
+// state.seriesPendientesGuardar = [ { serie, forzar }, ... ]
+
+function agregarSerie(){
+  var input = document.getElementById('serie-input');
+  var numSerie = input.value.trim();
   if(!numSerie){ input.focus(); return; }
 
-  // ── VALIDAR DUPLICADO EN SESIÓN ──
   var serieUpper = numSerie.toUpperCase();
-  var duplicado = state.seriesEstaSession.some(function(s){ return s.toUpperCase() === serieUpper; });
-  if(duplicado){
-    agregarSerieLog(numSerie, 'duplicate', '⚠ Serie duplicada en esta sesión');
-    toast('Esta serie ya fue ingresada en esta sesión', 'error');
+
+  // Duplicado en sesión
+  if(state.seriesEstaSession.some(function(s){ return s.toUpperCase()===serieUpper; })){
+    agregarSerieLog(numSerie,'duplicate','⚠ Serie duplicada en esta sesión');
+    toast('Esta serie ya fue ingresada','error');
     input.value=''; input.focus();
     return;
   }
 
-  var codigo=state.formActual.codigo;
-  var bodega=state.bodega;
-  input.disabled=true;
-  try {
-    var data = await api('validarSerie', { codigo:codigo, serie:numSerie, bodega:bodega });
-    if(data.encontrada && data.ok){
-      await guardarSerieFisica(numSerie, false);
-      state.seriesEstaSession.push(numSerie);
-      agregarSerieLog(numSerie, 'ok', '✓ Serie válida');
-    } else if(data.encontrada && !data.codigoOk){
-      var f1 = await mostrarModalSerie('⚠️ Código no coincide','La serie <b>'+numSerie+'</b> está registrada bajo el código <b>'+data.codigoHoja+'</b>, no bajo <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(f1){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (código no coincide)'); }
-      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
-    } else if(data.encontrada && !data.bodegaOk){
-      var f2 = await mostrarModalSerie('⚠️ Bodega no coincide','La serie <b>'+numSerie+'</b> pertenece a la bodega <b>'+data.bodegaHoja+'</b>, no a <b>'+bodega+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(f2){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (bodega no coincide)'); }
-      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+  var codigo = state.formActual.codigo;
+  var bodega  = state.bodega;
+
+  // ── VALIDACIÓN LOCAL contra catálogo descargado ──
+  var cat = state.catalogoSeries || {};
+  var entrada = cat[serieUpper];
+
+  if(entrada){
+    // Serie encontrada en catálogo
+    if(entrada.codigoHoja === codigo.toUpperCase() && entrada.bodegaHoja === bodega.toUpperCase()){
+      // Todo OK — agregar sin preguntar
+      _acumularSerie(numSerie, false);
+      agregarSerieLog(numSerie,'ok','✓ Serie válida');
+    } else if(entrada.codigoHoja !== codigo.toUpperCase()){
+      mostrarModalSerie('⚠️ Código no coincide',
+        'La serie <b>'+numSerie+'</b> está registrada bajo el código <b>'+entrada.codigoHoja+'</b>, no bajo <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?'
+      ).then(function(ok){
+        if(ok){ _acumularSerie(numSerie, true); agregarSerieLog(numSerie,'forced','Guardada (código no coincide)'); }
+        else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+      });
     } else {
-      var f3 = await mostrarModalSerie('⚠️ Serie no encontrada','La serie <b>'+numSerie+'</b> no está en la hoja SERIES para el código <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?');
-      if(f3){ await guardarSerieFisica(numSerie, true); state.seriesEstaSession.push(numSerie); agregarSerieLog(numSerie,'forced','Guardada (no estaba en hoja)'); }
-      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+      mostrarModalSerie('⚠️ Bodega no coincide',
+        'La serie <b>'+numSerie+'</b> pertenece a la bodega <b>'+entrada.bodegaHoja+'</b>, no a <b>'+bodega+'</b>.<br><br>¿Guardar igual como serie física?'
+      ).then(function(ok){
+        if(ok){ _acumularSerie(numSerie, true); agregarSerieLog(numSerie,'forced','Guardada (bodega no coincide)'); }
+        else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+      });
     }
-  } catch(e){ toast('Error al validar serie: '+e.message, 'error'); }
-  input.disabled=false; input.value=''; input.focus();
+  } else if(Object.keys(cat).length > 0){
+    // Catálogo cargado pero serie no encontrada
+    mostrarModalSerie('⚠️ Serie no encontrada',
+      'La serie <b>'+numSerie+'</b> no está en la hoja SERIES para el código <b>'+codigo+'</b>.<br><br>¿Guardar igual como serie física?'
+    ).then(function(ok){
+      if(ok){ _acumularSerie(numSerie, true); agregarSerieLog(numSerie,'forced','Guardada (no estaba en hoja)'); }
+      else { agregarSerieLog(numSerie,'error-item','No guardada'); }
+    });
+  } else {
+    // Catálogo vacío o no cargado — aceptar sin validar
+    _acumularSerie(numSerie, false);
+    agregarSerieLog(numSerie,'ok','✓ Serie ingresada');
+  }
+
+  input.value=''; input.focus();
 }
+
+function _acumularSerie(numSerie, forzar){
+  // Acumular en memoria — se guardará todo de una vez al finalizar
+  if(!state.seriesPendientesGuardar) state.seriesPendientesGuardar = [];
+  state.seriesPendientesGuardar.push({ serie: numSerie, forzar: forzar });
+  state.seriesEstaSession.push(numSerie);
+  state.seriesIngresadas.push(numSerie);
+  quitarDeEsperadas(numSerie);
+  // Actualizar contador en topbar
+  var counter = document.getElementById('sp-series-count');
+  if(counter) counter.textContent = state.seriesIngresadas.length + ' ingresada(s) · pendiente de guardar';
+}
+
 async function guardarSerieFisica(numSerie, forzar){
+  // Compatibilidad — se mantiene para llamadas individuales si fuera necesario
   var data = await api('guardarSerieFisica', { codigo:state.formActual.codigo, serie:numSerie, bodega:state.bodega, forzar:forzar.toString() });
   if(!data.success) throw new Error(data.message);
   state.seriesIngresadas.push(numSerie);
-  // Quitar de la lista de esperadas
   quitarDeEsperadas(numSerie);
 }
 function quitarDeEsperadas(numSerie){
@@ -1274,6 +1327,26 @@ function mostrarModalSerie(titulo, desc){
 }
 function responderModal(forzar){ document.getElementById('modal-serie').classList.remove('open'); if(resolverModal){ resolverModal(forzar); resolverModal=null; } }
 async function finalizarSeries(){
+  // Guardar todas las series acumuladas en un solo viaje al servidor
+  var pendientes = state.seriesPendientesGuardar || [];
+  if(pendientes.length > 0){
+    var btnFin = document.querySelector('#series-panel .btn-primary');
+    if(btnFin){ btnFin.disabled=true; btnFin.innerHTML='<span class="spinner"></span> Guardando '+pendientes.length+' series…'; }
+    try {
+      var data = await api('guardarSeriesBatch', {
+        codigo:  state.formActual.codigo,
+        bodega:  state.bodega,
+        series:  JSON.stringify(pendientes)
+      });
+      if(!data.success) throw new Error(data.message||'Error al guardar');
+      state.seriesPendientesGuardar = [];
+      toast(pendientes.length+' series guardadas ✓','success');
+    } catch(e){
+      toast('Error guardando series: '+e.message,'error');
+      if(btnFin){ btnFin.disabled=false; btnFin.textContent='✓ Finalizar y guardar conteo'; }
+      return; // No cerrar si hubo error
+    }
+  }
   document.getElementById('series-panel').classList.remove('open');
   var n=state.seriesIngresadas.length;
   document.getElementById('f-series-display').value = n>0 ? n+' serie(s) ingresada(s)' : '';
