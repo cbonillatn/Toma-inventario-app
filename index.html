@@ -1327,25 +1327,41 @@ function mostrarModalSerie(titulo, desc){
 }
 function responderModal(forzar){ document.getElementById('modal-serie').classList.remove('open'); if(resolverModal){ resolverModal(forzar); resolverModal=null; } }
 async function finalizarSeries(){
-  // Guardar todas las series acumuladas en un solo viaje al servidor
+  // Guardar series en lotes de 20 para no superar límite de URL de Apps Script
   var pendientes = state.seriesPendientesGuardar || [];
   if(pendientes.length > 0){
     var btnFin = document.querySelector('#series-panel .btn-primary');
-    if(btnFin){ btnFin.disabled=true; btnFin.innerHTML='<span class="spinner"></span> Guardando '+pendientes.length+' series…'; }
-    try {
-      var data = await api('guardarSeriesBatch', {
-        codigo:  state.formActual.codigo,
-        bodega:  state.bodega,
-        series:  JSON.stringify(pendientes)
-      });
-      if(!data.success) throw new Error(data.message||'Error al guardar');
-      state.seriesPendientesGuardar = [];
-      toast(pendientes.length+' series guardadas ✓','success');
-    } catch(e){
-      toast('Error guardando series: '+e.message,'error');
-      if(btnFin){ btnFin.disabled=false; btnFin.textContent='✓ Finalizar y guardar conteo'; }
-      return; // No cerrar si hubo error
+    var LOTE = 20;
+    var totalLotes = Math.ceil(pendientes.length / LOTE);
+    var erroresBatch = [];
+
+    for(var lote = 0; lote < totalLotes; lote++){
+      var desde = lote * LOTE;
+      var hasta = Math.min(desde + LOTE, pendientes.length);
+      var porcion = pendientes.slice(desde, hasta);
+
+      if(btnFin){ btnFin.disabled=true; btnFin.innerHTML='<span class="spinner"></span> Guardando series '+(desde+1)+'-'+hasta+' de '+pendientes.length+'…'; }
+
+      try {
+        var data = await api('guardarSeriesBatch', {
+          codigo: state.formActual.codigo,
+          bodega: state.bodega,
+          series: JSON.stringify(porcion)
+        });
+        if(!data.success) erroresBatch.push('Lote '+(lote+1)+': '+(data.message||'Error'));
+      } catch(e){
+        erroresBatch.push('Lote '+(lote+1)+': '+e.message);
+      }
     }
+
+    state.seriesPendientesGuardar = [];
+
+    if(erroresBatch.length > 0){
+      toast('Algunas series no se guardaron: '+erroresBatch[0],'error');
+      if(btnFin){ btnFin.disabled=false; btnFin.textContent='✓ Finalizar y guardar conteo'; }
+      return;
+    }
+    toast(pendientes.length+' series guardadas ✓','success');
   }
   document.getElementById('series-panel').classList.remove('open');
   var n=state.seriesIngresadas.length;
