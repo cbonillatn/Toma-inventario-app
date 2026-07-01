@@ -1764,7 +1764,7 @@ async function cargarDiferenciasPendientes(){
       var color = dif < 0 ? 'var(--danger)' : 'var(--accent)';
       var signo = dif > 0 ? '+' : '';
       return '<label style="display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer">'
-        +'<input type="checkbox" class="dif-cb" value="'+item.codigo+'" data-desc="'+(item.descripcion||'')+'" data-stock="'+item.stock+'" data-conteo="'+item.conteo+'" data-dif="'+item.diferencia+'" onchange="actualizarConteoSel()">'
+        +'<input type="checkbox" class="dif-cb" value="'+item.codigo+'" data-desc="'+(item.descripcion||'')+'" data-stock="'+item.stock+'" data-conteo="'+item.conteo+'" data-dif="'+item.diferencia+'" data-filas="'+JSON.stringify(item.filas||[])+'" onchange="actualizarConteoSel()">'
         +'<div style="flex:1;min-width:0">'
         +'<div style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+item.codigo+'</div>'
         +'<div style="font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+( item.descripcion||'—')+'</div>'
@@ -1797,7 +1797,7 @@ async function asignarReconteo(){
   if(!checks.length){ toast('Selecciona al menos un artículo','error'); return; }
   var codigos = [];
   checks.forEach(function(cb){
-    codigos.push({ codigo:cb.value, descripcion:cb.dataset.desc, stock:cb.dataset.stock, conteoOriginal:cb.dataset.conteo, diferencia:cb.dataset.dif });
+    codigos.push({ codigo:cb.value, descripcion:cb.dataset.desc, stock:cb.dataset.stock, conteoOriginal:cb.dataset.conteo, diferencia:cb.dataset.dif, filasResumen:cb.dataset.filas||'[]' });
   });
   var btn = document.getElementById('btn-asignar-reconteo');
   btn.disabled=true; btn.textContent='Asignando...';
@@ -1855,6 +1855,7 @@ async function cargarMisReconteos(){
   try {
     var data = await api('getMisReconteos', { usuario: state.currentUser.usuario });
     var items = data.items||[];
+    state.misReconteos = items; // guardar para lookup en guardarCorreccion/confirmar
     if(!items.length){
       el.innerHTML='<div style="text-align:center;padding:24px;font-size:13px;color:var(--text2)">No tienes artículos asignados para reconteo.</div>';
       return;
@@ -1914,9 +1915,11 @@ async function guardarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.d
   var ubicacion = ubicInput ? ubicInput.value.trim() : '';
   if(nuevaCantidad===''){ toast('Ingresa la cantidad correcta','error'); return; }
   try {
+    var itemRec = (state.misReconteos||[]).find(function(r){ return r.codigo===codigo; });
     var data = await api('resolverReconteo', {
       codigo: codigo,
       rowIndex: rowIndex,
+      filasResumen: JSON.stringify(itemRec && itemRec.filasResumen ? itemRec.filasResumen : (rowIndex?[Number(rowIndex)]:[])),
       accion: 'corregir',
       nuevaCantidad: nuevaCantidad,
       ubicacion: ubicacion,
@@ -1931,9 +1934,11 @@ async function guardarCorreccion(btn){ var idx=btn.dataset.idx; var codigo=btn.d
 
 async function confirmarDiferencia(btn){ var idx=btn.dataset.idx; var codigo=btn.dataset.codigo; var rowIndex=btn.dataset.row;
   try {
+    var itemRec2 = (state.misReconteos||[]).find(function(r){ return r.codigo===codigo; });
     var data = await api('resolverReconteo', {
       codigo: codigo,
       rowIndex: rowIndex,
+      filasResumen: JSON.stringify(itemRec2 && itemRec2.filasResumen ? itemRec2.filasResumen : (rowIndex?[Number(rowIndex)]:[])),
       accion: 'confirmar',
       usuario: state.currentUser.usuario
     });
