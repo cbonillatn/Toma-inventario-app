@@ -2038,10 +2038,18 @@ function cruzarBodegas(datosBodegas, incluirSimilares){
     });
   });
   if(incluirSimilares){
-    var codigos = Object.keys(mapa);
-    for(var i=0; i<codigos.length; i++){
-      for(var j=i+1; j<codigos.length; j++){
-        var codA=codigos[i], codB=codigos[j];
+    // Solo comparar códigos que tienen diferencia (faltante o sobrante) en alguna bodega —
+    // los artículos sin diferencia (ya cuadrados) no aportan valor al análisis de cruce.
+    var codigosConDiferencia = Object.keys(mapa).filter(function(cod){
+      var presenciaCod = mapa[cod];
+      return Object.keys(presenciaCod).some(function(bod){
+        return Number(presenciaCod[bod].diferencia) !== 0;
+      });
+    });
+
+    for(var i=0; i<codigosConDiferencia.length; i++){
+      for(var j=i+1; j<codigosConDiferencia.length; j++){
+        var codA=codigosConDiferencia[i], codB=codigosConDiferencia[j];
         var entA=Object.values(mapa[codA])[0], entB=Object.values(mapa[codB])[0];
         var bodA=Object.keys(mapa[codA])[0], bodB=Object.keys(mapa[codB])[0];
         if(bodA===bodB) continue;
