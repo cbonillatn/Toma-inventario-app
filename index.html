@@ -142,6 +142,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
   #print-area th { background: #eee; }
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -309,6 +310,15 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
               <button class="btn btn-primary" onclick="asignarReconteo()" style="width:auto" id="btn-asignar-reconteo">Asignar seleccionados</button>
             </div>
           </div>
+        </div>
+        <div class="card" style="margin-bottom:12px">
+          <div class="card-title">Cargar plantilla (.xlsx)</div>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)">Columnas requeridas: <b>Código, Descripción, Stock, Conteo, Diferencia, Usuario</b>. Cada fila puede tener un usuario distinto — se reparte automáticamente. Máximo 100 códigos por persona.</p>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="file" id="plantilla-reconteo-file" accept=".xlsx,.xls" style="flex:1;min-width:200px">
+            <button class="btn btn-primary" onclick="cargarPlantillaReconteo()" style="width:auto" id="btn-cargar-plantilla">Cargar plantilla</button>
+          </div>
+          <div id="plantilla-reconteo-status" style="margin-top:10px;font-size:12px;color:var(--text2);font-family:var(--mono);display:none"></div>
         </div>
         <div class="card">
           <div class="card-title">Asignaciones activas</div>
@@ -1807,8 +1817,20 @@ async function cargarDiferenciasPendientes(){
     var diffs = (data.items||[]).filter(function(i){
       return i.diferencia !== '' && Number(i.diferencia) !== 0 && i.conteo !== '';
     });
+
+    // Excluir códigos que ya están asignados y pendientes (a cualquier usuario)
+    // para que no aparezcan duplicados en el listado disponible
+    try {
+      var asigData = await api('getAsignacionesReconteo');
+      var pendientesSet = {};
+      (asigData.items||[]).forEach(function(a){
+        if(String(a.estado).trim()==='pendiente') pendientesSet[String(a.codigo).trim().toUpperCase()] = true;
+      });
+      diffs = diffs.filter(function(i){ return !pendientesSet[String(i.codigo).trim().toUpperCase()]; });
+    } catch(e2){ /* si falla, mostramos todos igual */ }
+
     if(!diffs.length){
-      items.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2)">No hay artículos con diferencia.</div>';
+      items.innerHTML='<div style="padding:16px;text-align:center;font-size:13px;color:var(--text2)">No hay artículos con diferencia disponibles (puede que ya estén todos asignados).</div>';
       return;
     }
     items.innerHTML = diffs.map(function(item){
@@ -1833,7 +1855,9 @@ async function cargarDiferenciasPendientes(){
 
 function actualizarConteoSel(){
   var n = document.querySelectorAll('.dif-cb:checked').length;
-  document.getElementById('reconteo-sel-count').textContent = n + ' seleccionado(s)';
+  var label = n + ' seleccionado(s)';
+  if(n > 100) label += ' ⚠ máximo 100 por persona';
+  document.getElementById('reconteo-sel-count').textContent = label;
 }
 
 function seleccionarTodasDif(val){
@@ -1847,6 +1871,7 @@ async function asignarReconteo(){
   if(!usuario){ toast('Selecciona un usuario','error'); return; }
   var checks = document.querySelectorAll('.dif-cb:checked');
   if(!checks.length){ toast('Selecciona al menos un artículo','error'); return; }
+  if(checks.length > 100){ toast('Máximo 100 códigos por persona. Deselecciona algunos ('+checks.length+' seleccionados).','error'); return; }
   var codigos = [];
   checks.forEach(function(cb){
     codigos.push({ codigo:cb.value, descripcion:cb.dataset.desc, stock:cb.dataset.stock, conteoOriginal:cb.dataset.conteo, diferencia:cb.dataset.dif, filasResumen:cb.dataset.filas||'[]' });
@@ -1856,12 +1881,98 @@ async function asignarReconteo(){
   try {
     var data = await api('asignarReconteo', { usuario:usuario, codigos:JSON.stringify(codigos) });
     if(data.success){
-      toast('Reconteo asignado a '+usuario+' ✓','success');
+      toast(data.message || ('Reconteo asignado a '+usuario+' ✓'),'success');
       cargarAsignacionesActivas();
-      seleccionarTodasDif(false);
+      cargarDiferenciasPendientes(); // refrescar para quitar los recién asignados
     } else { toast(data.message||'Error al asignar','error'); }
   } catch(e){ toast('Error: '+e.message,'error'); }
   btn.disabled=false; btn.textContent='Asignar seleccionados';
+}
+
+// ── Admin: cargar plantilla Excel (.xlsx) con reparto multi-usuario ──
+async function cargarPlantillaReconteo(){
+  var fileInput = document.getElementById('plantilla-reconteo-file');
+  var statusEl  = document.getElementById('plantilla-reconteo-status');
+  var btn       = document.getElementById('btn-cargar-plantilla');
+  var file = fileInput.files[0];
+  if(!file){ toast('Selecciona un archivo .xlsx primero','error'); return; }
+
+  statusEl.style.display = 'block';
+  statusEl.textContent = 'Leyendo archivo…';
+  btn.disabled = true;
+
+  try {
+    var buffer = await file.arrayBuffer();
+    var wb = XLSX.read(buffer, { type: 'array' });
+    var sheetName = wb.SheetNames[0];
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[sheetName], { defval: '' });
+
+    if(!rows.length){ toast('El archivo no tiene filas de datos','error'); statusEl.style.display='none'; btn.disabled=false; return; }
+
+    // Normalizar encabezados (sin acentos, minúsculas) para encontrar las columnas sin importar variantes
+    function norm(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim(); }
+    var primeraFila = rows[0];
+    var claves = Object.keys(primeraFila);
+    var mapCol = {};
+    claves.forEach(function(k){
+      var n = norm(k);
+      if(n.indexOf('codigo')>-1) mapCol.codigo = k;
+      else if(n.indexOf('descripcion')>-1) mapCol.descripcion = k;
+      else if(n.indexOf('stock')>-1) mapCol.stock = k;
+      else if(n.indexOf('conteo')>-1 && n.indexOf('original')===-1) mapCol.conteo = k;
+      else if(n.indexOf('diferencia')>-1) mapCol.diferencia = k;
+      else if(n.indexOf('usuario')>-1) mapCol.usuario = k;
+    });
+
+    if(!mapCol.codigo || !mapCol.usuario){
+      toast('El archivo debe tener columnas "Código" y "Usuario"','error');
+      statusEl.style.display='none'; btn.disabled=false;
+      return;
+    }
+
+    // Agrupar filas por usuario
+    var porUsuario = {};
+    rows.forEach(function(r){
+      var usr = String(r[mapCol.usuario]||'').trim();
+      if(!usr) return;
+      var cod = String(r[mapCol.codigo]||'').trim();
+      if(!cod) return;
+      if(!porUsuario[usr]) porUsuario[usr] = [];
+      porUsuario[usr].push({
+        codigo: cod,
+        descripcion: mapCol.descripcion ? String(r[mapCol.descripcion]||'').trim() : '',
+        stock: mapCol.stock ? r[mapCol.stock] : 0,
+        conteoOriginal: mapCol.conteo ? r[mapCol.conteo] : 0,
+        diferencia: mapCol.diferencia ? r[mapCol.diferencia] : 0,
+        filasResumen: '[]' // el backend calcula las filas reales buscando el código en RESUMEN
+      });
+    });
+
+    var usuarios = Object.keys(porUsuario);
+    if(!usuarios.length){ toast('No se detectaron filas válidas con usuario asignado','error'); statusEl.style.display='none'; btn.disabled=false; return; }
+
+    var resumenFinal = [];
+    for(var i=0; i<usuarios.length; i++){
+      var usr = usuarios[i];
+      var lista = porUsuario[usr];
+      statusEl.textContent = 'Asignando a '+usr+' ('+(i+1)+'/'+usuarios.length+')… '+lista.length+' código(s)';
+      try {
+        var data = await api('asignarReconteo', { usuario: usr, codigos: JSON.stringify(lista) });
+        resumenFinal.push(usr + ': ' + (data.message || (data.success ? 'ok' : 'error')));
+      } catch(e){
+        resumenFinal.push(usr + ': error — ' + e.message);
+      }
+    }
+
+    statusEl.innerHTML = resumenFinal.map(function(r){ return '• '+r; }).join('<br>');
+    toast('Plantilla procesada — '+usuarios.length+' usuario(s) ✓','success');
+    fileInput.value = '';
+    cargarAsignacionesActivas();
+  } catch(e){
+    toast('Error leyendo el archivo: '+e.message,'error');
+    statusEl.style.display = 'none';
+  }
+  btn.disabled = false;
 }
 
 // ── Admin: ver asignaciones activas ──
@@ -1928,11 +2039,12 @@ async function cargarMisReconteos(){
         +'<div style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+item.codigo+'</div>'
         +'<div style="font-size:14px;font-weight:500;margin-top:2px">'+( item.descripcion||'—')+'</div>'
         +'</div>'+estadoBadge+'</div>'
-        +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;text-align:center">'
+        +'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px;text-align:center">'
         +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Stock esperado</div><div style="font-size:16px;font-weight:500">'+item.stock+'</div></div>'
         +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Conteo original</div><div style="font-size:16px;font-weight:500">'+item.conteoOriginal+'</div></div>'
         +'<div style="background:var(--surface2);border-radius:var(--radius);padding:8px"><div style="font-size:11px;color:var(--text2)">Diferencia</div><div style="font-size:16px;font-weight:500;color:'+color+'">'+signo+dif+'</div></div>'
         +'</div>'
+        +(item.ubicacionOriginal ? '<div style="font-size:12px;color:var(--text2);margin-bottom:12px;font-family:var(--mono)">📍 Ubicación del conteo original: <span style="color:var(--accent2)">'+item.ubicacionOriginal+'</span></div>' : '<div style="margin-bottom:12px"></div>')
         +(resuelto ? '' :
           '<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
           +'<button class="btn btn-warn btn-sm" data-idx="'+idx+'" data-codigo="'+item.codigo+'" data-row="'+item.rowIndex+'" onclick="mostrarCorreccion(this)" style="width:auto">✎ Corregir conteo</button>'
@@ -2073,24 +2185,30 @@ async function cargarMiLista(){
   try {
     var data = await api('getMiListaConteo', { usuario: state.currentUser.usuario });
     var items = data.items || [];
+    var totalAsignados = data.totalAsignados || items.length;
     state.miListaConteo = items;
-    if(!items.length){
+
+    if(totalAsignados === 0){
       resumenEl.textContent = 'No tienes ningún código asignado para este corte.';
       el.innerHTML = '';
       return;
     }
-    var contados = items.filter(function(i){ return i.contado; }).length;
-    resumenEl.textContent = contados + ' de ' + items.length + ' códigos contados';
+    if(items.length === 0){
+      resumenEl.textContent = '✓ ¡Completaste tu lista! '+totalAsignados+' de '+totalAsignados+' códigos contados.';
+      el.innerHTML = '<div style="text-align:center;padding:24px;font-size:13px;color:var(--accent)">Ya no tienes códigos pendientes por contar.</div>';
+      return;
+    }
+
+    var contadosYa = totalAsignados - items.length;
+    resumenEl.textContent = items.length + ' código(s) pendiente(s) · ' + contadosYa + ' de ' + totalAsignados + ' ya contados';
 
     el.innerHTML = '<div style="max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius)">'
       + items.map(function(item){
-          var badge = item.contado
-            ? '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(0,229,160,.15);color:var(--accent)">✓ Contado</span>'
-            : '<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2)">Pendiente</span>';
           return '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid var(--border)">'
             +'<div><span style="font-family:var(--mono);font-size:12px;color:var(--accent2)">'+item.codigo+'</span>'
             +'<div style="font-size:13px;margin-top:2px">'+(item.descripcion||'—')+'</div></div>'
-            +badge+'</div>';
+            +'<span style="font-size:11px;padding:2px 8px;border-radius:20px;background:var(--surface2);color:var(--text2)">Pendiente</span>'
+            +'</div>';
         }).join('')
       + '</div>';
   } catch(e){ resumenEl.textContent = 'Error al cargar tu lista'; el.innerHTML=''; }
