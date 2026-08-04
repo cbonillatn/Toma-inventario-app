@@ -759,8 +759,19 @@ var state = {
 };
 
 // api() — operaciones de la bodega (buscarProducto, guardarConteo, etc.)
+// Convierte undefined/null a '' antes de construir la URL — evita que
+// URLSearchParams los transforme en el texto literal "undefined" o "null"
+function _sanitizarPayload(payload){
+  var limpio = {};
+  Object.keys(payload || {}).forEach(function(k){
+    var v = payload[k];
+    limpio[k] = (v === undefined || v === null) ? '' : v;
+  });
+  return limpio;
+}
+
 async function api(action, payload){
-  payload = payload || {};
+  payload = _sanitizarPayload(payload);
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
   var res = await fetch(getScriptUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
@@ -769,7 +780,7 @@ async function api(action, payload){
 
 // apiMaestro() — operaciones centrales (usuarios, bodegas, responsables, config)
 async function apiMaestro(action, payload){
-  payload = payload || {};
+  payload = _sanitizarPayload(payload);
   var params = new URLSearchParams(Object.assign({ action: action }, payload));
   var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
   if (!res.ok) throw new Error('Error de red: ' + res.status);
@@ -1195,16 +1206,38 @@ function iniciarGuardado(){
 }
 function responderConfirmacion(ok){
   document.getElementById('modal-confirmar').classList.remove('open');
-  if(ok) document.getElementById('modal-tiene-serie').classList.add('open');
+  if(ok){
+    // Reactivar los botones por si quedaron deshabilitados de un guardado anterior
+    document.querySelectorAll('#modal-tiene-serie .btn').forEach(function(b){ b.disabled = false; });
+    document.getElementById('modal-tiene-serie').classList.add('open');
+  }
   // Si no, regresa al formulario sin guardar
 }
 function responderTieneSerie(tiene){
   document.getElementById('modal-tiene-serie').classList.remove('open');
+  // Deshabilitar ambos botones del modal de inmediato — evita que un doble
+  // clic (o doble tap) dispare guardarConteo() dos veces antes de que
+  // termine la transición de cierre del modal
+  document.querySelectorAll('#modal-tiene-serie .btn').forEach(function(b){ b.disabled = true; });
   if(tiene){ abrirPanelSeries(); } else { guardarConteo(); }
 }
 async function guardarConteo(){
+  // Guardia global: evita que un doble clic (en cualquiera de los botones
+  // que llevan aquí) dispare dos guardados en paralelo
+  if(state.guardando){ return; }
+  state.guardando = true;
+
   var f = state.formActual;
   var btn = document.getElementById('btn-guardar');
+
+  // Validación defensiva: si el formulario se vació por alguna razón
+  // (ej. el usuario navegó de vuelta), no enviar datos incompletos
+  if(!f || !f.codigo || !f.conteo || !f.ubicacion || !f.responsable){
+    toast('Error: datos del formulario incompletos. Vuelve a intentarlo.', 'error');
+    state.guardando = false;
+    return;
+  }
+
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando…';
   try {
     var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, imagen:f.imagen||'' });
@@ -1215,6 +1248,7 @@ async function guardarConteo(){
     } else { throw new Error(data.message || 'Error al guardar'); }
   } catch(e){ toast('Error: '+e.message, 'error'); }
   btn.disabled=false; btn.innerHTML='Guardar Registro ↗';
+  state.guardando = false;
 }
 function limpiarFormulario(){
   ['codigo-input','f-conteo','f-ubicacion','f-series-display'].forEach(function(id){ document.getElementById(id).value=''; });
@@ -1401,46 +1435,63 @@ function mostrarModalSerie(titulo, desc){
 }
 function responderModal(forzar){ document.getElementById('modal-serie').classList.remove('open'); if(resolverModal){ resolverModal(forzar); resolverModal=null; } }
 async function finalizarSeries(){
-  // Guardar series en lotes de 20 para no superar límite de URL de Apps Script
-  var pendientes = state.seriesPendientesGuardar || [];
-  if(pendientes.length > 0){
-    var btnFin = document.querySelector('#series-panel .btn-primary');
-    var LOTE = 20;
-    var totalLotes = Math.ceil(pendientes.length / LOTE);
-    var erroresBatch = [];
+  // Guardia global: cubre AMBOS botones que llaman a esta función
+  // ("Finalizar ✓" del header y "Finalizar y guardar conteo" de abajo)
+  // para que un doble clic en cualquiera de los dos no dispare el proceso dos veces
+  if(state.finalizando){ return; }
+  state.finalizando = true;
 
-    for(var lote = 0; lote < totalLotes; lote++){
-      var desde = lote * LOTE;
-      var hasta = Math.min(desde + LOTE, pendientes.length);
-      var porcion = pendientes.slice(desde, hasta);
+  // Deshabilitar ambos botones de inmediato, antes de cualquier operación async
+  var btnesFinalizar = document.querySelectorAll('#series-panel .btn-secondary.btn-sm, #series-panel .btn-primary');
+  btnesFinalizar.forEach(function(b){ b.disabled = true; });
 
-      if(btnFin){ btnFin.disabled=true; btnFin.innerHTML='<span class="spinner"></span> Guardando series '+(desde+1)+'-'+hasta+' de '+pendientes.length+'…'; }
+  try {
+    // Guardar series en lotes de 20 para no superar límite de URL de Apps Script
+    var pendientes = state.seriesPendientesGuardar || [];
+    if(pendientes.length > 0){
+      var btnFin = document.querySelector('#series-panel .btn-primary');
+      var LOTE = 20;
+      var totalLotes = Math.ceil(pendientes.length / LOTE);
+      var erroresBatch = [];
 
-      try {
-        var data = await api('guardarSeriesBatch', {
-          codigo: state.formActual.codigo,
-          bodega: state.bodega,
-          series: JSON.stringify(porcion)
-        });
-        if(!data.success) erroresBatch.push('Lote '+(lote+1)+': '+(data.message||'Error'));
-      } catch(e){
-        erroresBatch.push('Lote '+(lote+1)+': '+e.message);
+      for(var lote = 0; lote < totalLotes; lote++){
+        var desde = lote * LOTE;
+        var hasta = Math.min(desde + LOTE, pendientes.length);
+        var porcion = pendientes.slice(desde, hasta);
+
+        if(btnFin){ btnFin.innerHTML='<span class="spinner"></span> Guardando series '+(desde+1)+'-'+hasta+' de '+pendientes.length+'…'; }
+
+        try {
+          var data = await api('guardarSeriesBatch', {
+            codigo: state.formActual.codigo,
+            bodega: state.bodega,
+            series: JSON.stringify(porcion)
+          });
+          if(!data.success) erroresBatch.push('Lote '+(lote+1)+': '+(data.message||'Error'));
+        } catch(e){
+          erroresBatch.push('Lote '+(lote+1)+': '+e.message);
+        }
       }
-    }
 
-    state.seriesPendientesGuardar = [];
+      state.seriesPendientesGuardar = [];
 
-    if(erroresBatch.length > 0){
-      toast('Algunas series no se guardaron: '+erroresBatch[0],'error');
-      if(btnFin){ btnFin.disabled=false; btnFin.textContent='✓ Finalizar y guardar conteo'; }
-      return;
+      if(erroresBatch.length > 0){
+        toast('Algunas series no se guardaron: '+erroresBatch[0],'error');
+        btnesFinalizar.forEach(function(b){ b.disabled=false; });
+        if(btnFin) btnFin.textContent='✓ Finalizar y guardar conteo';
+        state.finalizando = false;
+        return;
+      }
+      toast(pendientes.length+' series guardadas ✓','success');
     }
-    toast(pendientes.length+' series guardadas ✓','success');
+    document.getElementById('series-panel').classList.remove('open');
+    var n=state.seriesIngresadas.length;
+    document.getElementById('f-series-display').value = n>0 ? n+' serie(s) ingresada(s)' : '';
+    await guardarConteo();
+  } finally {
+    btnesFinalizar.forEach(function(b){ b.disabled = false; });
+    state.finalizando = false;
   }
-  document.getElementById('series-panel').classList.remove('open');
-  var n=state.seriesIngresadas.length;
-  document.getElementById('f-series-display').value = n>0 ? n+' serie(s) ingresada(s)' : '';
-  await guardarConteo();
 }
 
 // ── RESUMEN ──
