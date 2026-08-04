@@ -1877,6 +1877,45 @@ function seleccionarTodasDif(val){
   actualizarConteoSel();
 }
 
+// ── Helper: asignar reconteo en lotes de 20 para no superar límite de URL GET ──
+async function asignarReconteoEnLotes(usuario, codigos, onProgreso){
+  var LOTE = 20;
+  var totalLotes = Math.ceil(codigos.length / LOTE);
+  var totalAsignados = 0, totalOmitDup = 0, totalOmitLimite = 0;
+  var huboError = false;
+  var ultimoMensaje = '';
+
+  for(var lote = 0; lote < totalLotes; lote++){
+    var desde = lote * LOTE;
+    var hasta = Math.min(desde + LOTE, codigos.length);
+    var porcion = codigos.slice(desde, hasta);
+
+    if(onProgreso) onProgreso(desde+1, hasta, codigos.length);
+
+    try {
+      var data = await api('asignarReconteo', { usuario: usuario, codigos: JSON.stringify(porcion) });
+      if(data.success){
+        totalAsignados   += data.asignados || porcion.length;
+        totalOmitDup     += data.omitidosPorDuplicado || 0;
+        totalOmitLimite  += data.omitidosPorLimite || 0;
+      } else {
+        huboError = true;
+        ultimoMensaje = data.message || 'Error desconocido';
+      }
+    } catch(e){
+      huboError = true;
+      ultimoMensaje = e.message;
+    }
+  }
+
+  var msg = totalAsignados + ' código(s) asignados a ' + usuario;
+  if(totalOmitDup > 0) msg += ' · ' + totalOmitDup + ' ya pendientes en otra asignación';
+  if(totalOmitLimite > 0) msg += ' · ' + totalOmitLimite + ' superaban el máximo';
+  if(huboError) msg += ' · hubo errores: ' + ultimoMensaje;
+
+  return { success: !huboError, asignados: totalAsignados, message: msg };
+}
+
 // ── Admin: asignar reconteo ──
 async function asignarReconteo(){
   var usuario = document.getElementById('reconteo-usuario-sel').value;
@@ -1891,7 +1930,9 @@ async function asignarReconteo(){
   var btn = document.getElementById('btn-asignar-reconteo');
   btn.disabled=true; btn.textContent='Asignando...';
   try {
-    var data = await api('asignarReconteo', { usuario:usuario, codigos:JSON.stringify(codigos) });
+    var data = await asignarReconteoEnLotes(usuario, codigos, function(desde,hasta,total){
+      btn.innerHTML = '<span class="spinner"></span> Asignando '+desde+'-'+hasta+' de '+total+'…';
+    });
     if(data.success){
       toast(data.message || ('Reconteo asignado a '+usuario+' ✓'),'success');
       cargarAsignacionesActivas();
@@ -1967,10 +2008,11 @@ async function cargarPlantillaReconteo(){
     for(var i=0; i<usuarios.length; i++){
       var usr = usuarios[i];
       var lista = porUsuario[usr];
-      statusEl.textContent = 'Asignando a '+usr+' ('+(i+1)+'/'+usuarios.length+')… '+lista.length+' código(s)';
       try {
-        var data = await api('asignarReconteo', { usuario: usr, codigos: JSON.stringify(lista) });
-        resumenFinal.push(usr + ': ' + (data.message || (data.success ? 'ok' : 'error')));
+        var data = await asignarReconteoEnLotes(usr, lista, function(desde,hasta,total){
+          statusEl.textContent = 'Asignando a '+usr+' ('+(i+1)+'/'+usuarios.length+')… código '+desde+'-'+hasta+' de '+total;
+        });
+        resumenFinal.push(usr + ': ' + data.message);
       } catch(e){
         resumenFinal.push(usr + ': error — ' + e.message);
       }
