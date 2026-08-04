@@ -417,13 +417,13 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
             <div style="font-size:32px;font-weight:500;color:var(--accent)" id="d-avance">—</div>
             <div style="font-size:11px;color:var(--text2);margin-top:4px"><span id="d-totalConteo">—</span> / <span id="d-totalExistencia">—</span> ítems</div>
           </div>
-          <div style="background:linear-gradient(135deg,rgba(235,87,87,.15),rgba(235,87,87,.05));border:1px solid rgba(235,87,87,.3);border-radius:var(--radius);padding:16px;text-align:center">
-            <div style="font-size:11px;color:var(--danger);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Faltantes</div>
+          <div style="background:linear-gradient(135deg,rgba(235,87,87,.15),rgba(235,87,87,.05));border:1px solid rgba(235,87,87,.3);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer" onclick="mostrarListaDiferencias('faltantes')" title="Clic para ver el listado detallado">
+            <div style="font-size:11px;color:var(--danger);font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Faltantes 🔍</div>
             <div style="font-size:32px;font-weight:500;color:var(--danger)" id="d-itemsFaltantes">—</div>
             <div style="font-size:11px;color:var(--text2);margin-top:4px" id="d-valorFaltantes">—</div>
           </div>
-          <div style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);padding:16px;text-align:center">
-            <div style="font-size:11px;color:#f59e0b;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sobrantes</div>
+          <div style="background:linear-gradient(135deg,rgba(245,158,11,.15),rgba(245,158,11,.05));border:1px solid rgba(245,158,11,.3);border-radius:var(--radius);padding:16px;text-align:center;cursor:pointer" onclick="mostrarListaDiferencias('sobrantes')" title="Clic para ver el listado detallado">
+            <div style="font-size:11px;color:#f59e0b;font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px">Sobrantes 🔍</div>
             <div style="font-size:32px;font-weight:500;color:#f59e0b" id="d-itemsSobrantes">—</div>
             <div style="font-size:11px;color:var(--text2);margin-top:4px" id="d-valorSobrantes">—</div>
           </div>
@@ -627,6 +627,18 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 </div>
 
 <!-- MODAL SERIE NO COINCIDE -->
+<!-- MODAL LISTA FALTANTES/SOBRANTES -->
+<div class="modal-overlay" id="modal-lista-diferencias">
+  <div class="modal" style="width:90vw;max-width:900px;max-height:85vh;display:flex;flex-direction:column">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+      <div class="modal-title" id="modal-lista-diferencias-title" style="margin-bottom:0">Listado</div>
+      <button class="btn btn-sm" onclick="cerrarModalListaDiferencias()" style="width:auto">✕ Cerrar</button>
+    </div>
+    <p style="font-size:12px;color:var(--text2);margin:4px 0 12px;font-family:var(--mono)" id="modal-lista-diferencias-sub">Cargando...</p>
+    <div style="overflow:auto;flex:1;border:1px solid var(--border);border-radius:var(--radius)" id="modal-lista-diferencias-content"></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-serie">
   <div class="modal">
     <span class="modal-icon">⚠️</span>
@@ -2228,6 +2240,57 @@ function imprimirListaConteo(){
     + '</tbody></table>';
   document.getElementById('print-area').innerHTML = html;
   window.print();
+}
+
+// ── FALTANTES / SOBRANTES — modal con listado detallado ──
+async function mostrarListaDiferencias(tipo){
+  var titleEl = document.getElementById('modal-lista-diferencias-title');
+  var subEl   = document.getElementById('modal-lista-diferencias-sub');
+  var contentEl = document.getElementById('modal-lista-diferencias-content');
+  var esFaltantes = tipo === 'faltantes';
+
+  titleEl.textContent = esFaltantes ? '⚠ Listado de Faltantes' : '📦 Listado de Sobrantes';
+  subEl.textContent = 'Cargando desde la hoja ' + (esFaltantes ? 'FALTANTES' : 'SOBRANTES') + '…';
+  contentEl.innerHTML = '<div style="padding:30px;text-align:center"><span class="spinner"></span></div>';
+  document.getElementById('modal-lista-diferencias').classList.add('open');
+
+  try {
+    var data = await api(esFaltantes ? 'getListaFaltantes' : 'getListaSobrantes');
+    if(data.error){
+      subEl.textContent = '';
+      contentEl.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">'+data.error+'</div>';
+      return;
+    }
+    var headers = data.headers || [];
+    var rows    = data.rows || [];
+
+    if(!rows.length){
+      subEl.textContent = 'Sin registros.';
+      contentEl.innerHTML = '<div style="padding:24px;text-align:center;font-size:13px;color:var(--text2)">No hay '+tipo+' registrados actualmente.</div>';
+      return;
+    }
+
+    subEl.textContent = rows.length + ' registro(s) encontrado(s)';
+
+    var thead = '<thead><tr>' + headers.map(function(h){
+      return '<th style="position:sticky;top:0;background:var(--surface2);padding:8px 12px;text-align:left;font-size:11px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);white-space:nowrap">'+(h||'—')+'</th>';
+    }).join('') + '</tr></thead>';
+
+    var tbody = '<tbody>' + rows.map(function(row){
+      return '<tr style="border-bottom:1px solid var(--border)">' + row.map(function(cell){
+        return '<td style="padding:8px 12px;font-size:13px;white-space:nowrap">'+(cell||'')+'</td>';
+      }).join('') + '</tr>';
+    }).join('') + '</tbody>';
+
+    contentEl.innerHTML = '<table style="width:100%;border-collapse:collapse">'+thead+tbody+'</table>';
+  } catch(e){
+    subEl.textContent = '';
+    contentEl.innerHTML = '<div style="padding:20px;color:var(--danger);font-size:13px">Error: '+e.message+'</div>';
+  }
+}
+
+function cerrarModalListaDiferencias(){
+  document.getElementById('modal-lista-diferencias').classList.remove('open');
 }
 
 // ── INFORME CRUZADO ──
