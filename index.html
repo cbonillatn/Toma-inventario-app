@@ -168,6 +168,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <div style="display:flex;align-items:center;gap:16px">
       <span class="topbar-brand">◈ BQEF · Inventario</span>
       <span id="bodega-topbar" style="font-family:var(--mono);font-size:11px;color:var(--accent2);display:none"></span>
+      <span id="cola-offline-badge" style="display:none;align-items:center;background:#f59e0b;color:#000;padding:4px 10px;border-radius:20px;font-size:11px;font-family:var(--mono);cursor:pointer" onclick="intentarSincronizarCola()" title="Clic para reintentar ahora"></span>
     </div>
     <div class="topbar-right">
       <div class="user-badge"><span id="ui-nombre"></span><span class="role-chip" id="ui-role-chip"></span></div>
@@ -540,6 +541,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
 
     <!-- CONFIG -->
     <div class="panel" id="tab-config">
+      <div class="card">
+        <div class="card-title">Rendimiento — caché de datos</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;font-family:var(--mono)">El sistema guarda en memoria el catálogo de productos y series por unas horas para responder más rápido. Si acabas de actualizar INV VALORIZADO o SERIES manualmente en el sheet, límpiala aquí para ver los cambios de inmediato.</p>
+        <button class="btn btn-secondary" onclick="limpiarCacheSistema()" style="width:auto" id="btn-limpiar-cache">🧹 Limpiar caché ahora</button>
+        <span id="cache-status" style="margin-left:12px;font-size:12px;color:var(--text2);font-family:var(--mono)"></span>
+      </div>
       <div class="card">
         <div class="card-title">Bodegas configuradas</div>
         <p style="font-size:12px;color:var(--text2);margin-bottom:16px;font-family:var(--mono)">Cada bodega tiene su propia URL de script y sheet. Los usuarios verán estas bodegas en el login.</p>
@@ -1039,6 +1046,10 @@ async function initApp(){
     var el = document.getElementById('bodega-topbar');
     el.textContent = '📦 ' + state.bodega; el.style.display = 'inline-flex';
   }
+  // Si quedaron registros pendientes de una sesión anterior (ej. se cerró
+  // la app sin señal), mostrar el badge e intentar sincronizar de inmediato
+  actualizarBadgeCola();
+  intentarSincronizarCola();
   // Leer config global del Maestro (mostrar_stock, aviso_duplicado)
   try {
     var cfgData = await apiMaestro('getConfig');
@@ -1179,6 +1190,73 @@ function mostrarProducto(codigo, desc, stock){
 }
 
 // ── GUARDAR ──
+// ══════════════════════════════════════════════════════════════════
+//  COLA OFFLINE — guarda localmente lo que no se pudo enviar por falla
+//  de red, y lo reintenta automáticamente cuando vuelve la conexión.
+// ══════════════════════════════════════════════════════════════════
+function _colaOfflineGet(){
+  try { return JSON.parse(localStorage.getItem('cola_offline') || '[]'); }
+  catch(e){ return []; }
+}
+function _colaOfflineSet(lista){
+  localStorage.setItem('cola_offline', JSON.stringify(lista));
+  actualizarBadgeCola();
+}
+function encolarGuardadoOffline(action, payload){
+  var lista = _colaOfflineGet();
+  lista.push({ action: action, payload: payload, ts: Date.now() });
+  _colaOfflineSet(lista);
+}
+function actualizarBadgeCola(){
+  var lista = _colaOfflineGet();
+  var badge = document.getElementById('cola-offline-badge');
+  if(!badge) return;
+  if(lista.length > 0){
+    badge.style.display = 'inline-flex';
+    badge.textContent = '📡 ' + lista.length + ' pendiente(s)';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+// Intenta reenviar todo lo pendiente. Se detiene en el primer fallo de red
+// (para no perder el orden ni martillar la red inútilmente) — los demás
+// quedan en cola para el próximo intento.
+var _sincronizandoCola = false;
+async function intentarSincronizarCola(){
+  if(_sincronizandoCola) return;
+  var lista = _colaOfflineGet();
+  if(!lista.length) return;
+  _sincronizandoCola = true;
+
+  var restante = lista.slice();
+  var sincronizados = 0;
+
+  while(restante.length > 0){
+    var item = restante[0];
+    try {
+      var data = await api(item.action, item.payload);
+      // Éxito (o idempotente: el backend ya lo tenía guardado de un intento previo)
+      restante.shift();
+      sincronizados++;
+      _colaOfflineSet(restante);
+    } catch(e){
+      // Seguimos sin conexión — detener aquí, se reintentará más tarde
+      break;
+    }
+  }
+
+  if(sincronizados > 0){
+    toast(sincronizados + ' registro(s) pendiente(s) sincronizado(s) ✓', 'success');
+  }
+  _sincronizandoCola = false;
+}
+
+// Disparadores automáticos: al recuperar conexión, cada 20s, y al iniciar sesión
+window.addEventListener('online', function(){ intentarSincronizarCola(); });
+setInterval(function(){
+  if(state.currentUser) intentarSincronizarCola();
+}, 20000);
+
 function iniciarGuardado(){
   if(!validarFormulario()) return;
   var codigo = document.getElementById('codigo-input').value.trim();
@@ -1189,6 +1267,9 @@ function iniciarGuardado(){
     ubicacion: document.getElementById('f-ubicacion').value.trim(),
     responsable: document.getElementById('f-responsable').value,
     imagen: state.imagenUrl || '',
+    // Llave única para este intento de guardado — se mantiene igual aunque
+    // se reintente por falla de red, así el backend nunca lo duplica
+    idKey: (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2))
   };
   state.seriesIngresadas = [];
   state.seriesPendientesGuardar = [];
@@ -1238,15 +1319,35 @@ async function guardarConteo(){
     return;
   }
 
+  var payload = { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, imagen:f.imagen||'', idKey:f.idKey };
+
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Guardando…';
+
+  var data = null;
+  var falloDeRed = false;
   try {
-    var data = await api('guardarConteo', { codigo:f.codigo, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, imagen:f.imagen||'' });
-    if(data.success){
-      toast('Registro guardado ✓', 'success');
-      addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true });
-      limpiarFormulario();
-    } else { throw new Error(data.message || 'Error al guardar'); }
-  } catch(e){ toast('Error: '+e.message, 'error'); }
+    data = await api('guardarConteo', payload);
+  } catch(e){
+    // fetch() lanzó una excepción real (sin conexión, DNS, timeout, etc.)
+    // — a diferencia de un error de validación del servidor, esto sí
+    // se debe encolar para reintentar automáticamente
+    falloDeRed = true;
+  }
+
+  if(falloDeRed){
+    encolarGuardadoOffline('guardarConteo', payload);
+    toast('📡 Sin conexión — guardado localmente, se enviará automáticamente al recuperar señal', 'error');
+    addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true, pendiente:true });
+    limpiarFormulario(); // el usuario puede seguir contando el siguiente artículo sin esperar
+  } else if(data && data.success){
+    toast(data.idempotente ? 'Registro ya estaba guardado ✓' : 'Registro guardado ✓', 'success');
+    addSessionLog({ codigo:f.codigo, descripcion:f.descripcion, conteo:f.conteo, ubicacion:f.ubicacion, responsable:f.responsable, usuario:state.currentUser.usuario, series:state.seriesIngresadas.length, ok:true });
+    limpiarFormulario();
+  } else {
+    // Error real de validación del servidor (ej. faltan campos) — no se encola, hay que corregir
+    toast('Error: '+((data&&data.message)||'No se pudo guardar'), 'error');
+  }
+
   btn.disabled=false; btn.innerHTML='Guardar Registro ↗';
   state.guardando = false;
 }
@@ -1726,6 +1827,26 @@ async function confirmarEliminarUsuario(usuario){
 document.getElementById('modal-usuario').addEventListener('click', function(e){ if(e.target===this) cerrarModalUsuario(); });
 
 // ── CONFIG ──
+// ── Limpiar caché del sistema (fuerza recarga de datos frescos) ──
+async function limpiarCacheSistema(){
+  var btn = document.getElementById('btn-limpiar-cache');
+  var statusEl = document.getElementById('cache-status');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Limpiando...';
+  try {
+    var data = await api('limpiarCache');
+    if(data.success){
+      statusEl.textContent = '✓ Caché limpiada — la próxima consulta traerá datos actualizados';
+      toast('Caché limpiada ✓','success');
+    } else {
+      statusEl.textContent = 'Error al limpiar caché';
+    }
+  } catch(e){
+    statusEl.textContent = 'Error: ' + e.message;
+    toast('Error limpiando caché','error');
+  }
+  btn.disabled = false; btn.textContent = '🧹 Limpiar caché ahora';
+}
+
 function cargarConfigUI(){
   var mUrl = document.getElementById('cfg-maestro-url');
   if(mUrl) mUrl.value = getMaestroUrl();
