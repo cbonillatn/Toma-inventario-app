@@ -2596,24 +2596,40 @@ function cruzarBodegas(datosBodegas, incluirSimilares){
     });
   });
   if(incluirSimilares){
-    // Solo comparar códigos que tienen diferencia (faltante o sobrante) en alguna bodega —
-    // los artículos sin diferencia (ya cuadrados) no aportan valor al análisis de cruce.
-    var codigosConDiferencia = Object.keys(mapa).filter(function(cod){
+    // Construir una lista plana de entradas CON diferencia real (código + bodega específica).
+    // Esto evita el error de tomar "el código en general" cuando existe en varias bodegas
+    // (algunas cuadradas, otras con diferencia) — solo comparamos las entradas que
+    // efectivamente tienen faltante o sobrante, nunca las que ya están cuadradas.
+    var entradasConDiferencia = [];
+    Object.keys(mapa).forEach(function(cod){
       var presenciaCod = mapa[cod];
-      return Object.keys(presenciaCod).some(function(bod){
-        return Number(presenciaCod[bod].diferencia) !== 0;
+      Object.keys(presenciaCod).forEach(function(bod){
+        var ent = presenciaCod[bod];
+        if(Number(ent.diferencia) !== 0){
+          entradasConDiferencia.push({ codigo:cod, bodega:bod, descripcion:ent.descripcion, diferencia:ent.diferencia });
+        }
       });
     });
 
-    for(var i=0; i<codigosConDiferencia.length; i++){
-      for(var j=i+1; j<codigosConDiferencia.length; j++){
-        var codA=codigosConDiferencia[i], codB=codigosConDiferencia[j];
-        var entA=Object.values(mapa[codA])[0], entB=Object.values(mapa[codB])[0];
-        var bodA=Object.keys(mapa[codA])[0], bodB=Object.keys(mapa[codB])[0];
-        if(bodA===bodB) continue;
-        var sim=similitudJaccard(entA.descripcion.toLowerCase(), entB.descripcion.toLowerCase());
+    for(var i=0; i<entradasConDiferencia.length; i++){
+      for(var j=i+1; j<entradasConDiferencia.length; j++){
+        var eA = entradasConDiferencia[i], eB = entradasConDiferencia[j];
+        if(eA.codigo === eB.codigo) continue;   // mismo código, no aplica
+        if(eA.bodega === eB.bodega) continue;   // misma bodega, no es cruce entre bodegas
+        // Solo tiene sentido sugerir cruce cuando una bodega tiene SOBRANTE y la otra FALTANTE
+        // (comparar dos faltantes o dos sobrantes entre sí no sugiere un traspaso real)
+        var signosOpuestos = (eA.diferencia > 0 && eB.diferencia < 0) || (eA.diferencia < 0 && eB.diferencia > 0);
+        if(!signosOpuestos) continue;
+        var sim = similitudJaccard(eA.descripcion.toLowerCase(), eB.descripcion.toLowerCase());
         if(sim>=0.65){
-          similares.push({ codigoA:codA, descripcionA:entA.descripcion, bodegaA:bodA, codigoB:codB, descripcionB:entB.descripcion, bodegaB:bodB, similitud:Math.round(sim*100)+'%', nota:'Posible artículo cruzado — verificar manualmente' });
+          var sobranteEnt = eA.diferencia > 0 ? eA : eB;
+          var faltanteEnt = eA.diferencia > 0 ? eB : eA;
+          similares.push({
+            codigoA:sobranteEnt.codigo, descripcionA:sobranteEnt.descripcion, bodegaA:sobranteEnt.bodega,
+            codigoB:faltanteEnt.codigo, descripcionB:faltanteEnt.descripcion, bodegaB:faltanteEnt.bodega,
+            similitud:Math.round(sim*100)+'%',
+            nota:'Sobra en '+sobranteEnt.bodega+' y falta en '+faltanteEnt.bodega+' — posible artículo cruzado, verificar manualmente'
+          });
         }
       }
     }
