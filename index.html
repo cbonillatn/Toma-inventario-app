@@ -153,10 +153,12 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <p id="login-sync-msg" style="font-size:11px;color:var(--accent2);font-family:var(--mono);margin-bottom:8px;display:none">⟳ Sincronizando bodegas…</p>
     <label>Usuario</label><input type="text" id="l-user" placeholder="nombre de usuario" autocomplete="off">
     <label>Contraseña</label><input type="password" id="l-pass" placeholder="••••••••">
-    <label>Bodega</label>
-    <select id="l-bodega" style="margin-bottom:20px">
-      <option value="">— Selecciona una bodega —</option>
-    </select>
+    <div id="l-bodega-wrap" style="display:none">
+      <label>Bodega</label>
+      <p style="font-size:11px;color:var(--accent2);font-family:var(--mono);margin:-6px 0 8px">Escribe para buscar entre tus bodegas</p>
+      <input type="text" id="l-bodega" list="l-bodega-datalist" placeholder="Escribe el nombre o código..." style="margin-bottom:20px" autocomplete="off">
+      <datalist id="l-bodega-datalist"></datalist>
+    </div>
     <button class="btn btn-primary" id="btn-login" onclick="doLogin()"><span>Ingresar</span><span>→</span></button>
     <p style="margin-top:12px;font-size:11px;color:var(--text2);text-align:center;font-family:var(--mono);cursor:pointer" onclick="mostrarConfigBodega()">⚙ Configurar bodegas</p>
     <p id="login-error" style="margin-top:14px;font-size:12px;color:var(--danger);text-align:center;font-family:var(--mono);display:none"></p>
@@ -802,31 +804,16 @@ function getBodegas(){
 function saveBodegas(list){ localStorage.setItem('cfg_bodegas', JSON.stringify(list)); }
 
 function renderLoginBodegas(){
-  var sel = document.getElementById('l-bodega');
+  var datalist = document.getElementById('l-bodega-datalist');
+  if(!datalist) return;
   var bodegas = getBodegas();
-  // Preserve current selection
-  var prev = sel.value;
-  sel.innerHTML = '<option value="">— Selecciona una bodega —</option>';
+  datalist.innerHTML = '';
   bodegas.forEach(function(b){
     var opt = document.createElement('option');
     opt.value = b.codigo;
-    opt.textContent = b.codigo + (b.label ? ' — ' + b.label : '');
-    opt.dataset.script = b.scriptUrl || '';
-    opt.dataset.sheet  = b.sheetUrl  || '';
-    sel.appendChild(opt);
+    opt.textContent = b.label ? (b.codigo + ' — ' + b.label) : b.codigo;
+    datalist.appendChild(opt);
   });
-  if(prev) sel.value = prev;
-  // If only one bodega, auto-select it
-  if(bodegas.length === 1) sel.value = bodegas[0].codigo;
-}
-
-function onBodegaChange(){
-  var sel = document.getElementById('l-bodega');
-  var opt = sel.options[sel.selectedIndex];
-  if(opt && opt.dataset.script){
-    localStorage.setItem('cfg_scriptUrl', opt.dataset.script);
-    if(opt.dataset.sheet) localStorage.setItem('cfg_sheetUrl', opt.dataset.sheet);
-  }
 }
 
 // Modal config bodega desde login
@@ -953,12 +940,28 @@ async function doLogin(){
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Verificando…';
   errEl.style.display = 'none';
   try {
+    var bodegaWrap = document.getElementById('l-bodega-wrap');
     var bodega = document.getElementById('l-bodega').value.trim().toUpperCase();
     // El login siempre va al Script Maestro
     var params = new URLSearchParams({ action:'login', usuario:usuario, pass:pass, bodega:bodega });
     var res = await fetch(getMaestroUrl() + '?' + params.toString(), { method:'GET', redirect:'follow' });
     if(!res.ok) throw new Error('Error de red: ' + res.status);
     var data = await res.json();
+
+    if(data.success && data.requiereBodega){
+      // Admin (o cuenta sin bodega asignada): pedirle que busque/escriba la bodega
+      // que desea revisar — el editor nunca llega a este caso, la suya es automática
+      renderLoginBodegas();
+      bodegaWrap.style.display = 'block';
+      var hint = document.getElementById('login-error');
+      hint.style.color = 'var(--accent2)';
+      hint.textContent = 'Indica qué bodega deseas revisar';
+      hint.style.display = 'block';
+      document.getElementById('l-bodega').focus();
+      btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
+      return;
+    }
+
     if (data.success){
       state.currentUser = data;
       state.bodega = data.bodega || '';
@@ -974,19 +977,24 @@ async function doLogin(){
       document.getElementById('app').style.display = 'block';
       applyRole(data.rol, data.nombre || data.usuario);
       initApp();
-    } else { showLoginError(data.message || 'Credenciales incorrectas'); }
+    } else {
+      document.getElementById('login-error').style.color = 'var(--danger)';
+      showLoginError(data.message || 'Credenciales incorrectas');
+    }
   } catch(e){ showLoginError('Sin conexión. Verifica la URL del Script Maestro en Config.'); }
   btn.disabled = false; btn.innerHTML = '<span>Ingresar</span><span>→</span>';
 }
 function showLoginError(msg){ var el=document.getElementById('login-error'); el.textContent=msg; el.style.display='block'; }
-document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-bodega').focus(); });
+document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 document.getElementById('l-user').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('l-pass').focus(); });
+document.getElementById('l-bodega').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 function doLogout(){
   state.currentUser=null;
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app').style.display='none';
   document.getElementById('l-pass').value='';
   document.getElementById('l-bodega').value='';
+  document.getElementById('l-bodega-wrap').style.display='none';
   document.getElementById('login-error').style.display='none';
 }
 
