@@ -242,9 +242,8 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
           </div>
           <div class="form-group">
             <label>Responsable <span style="color:var(--danger)">*</span></label>
-            <select id="f-responsable" onchange="limpiarError('f-responsable','hint-responsable')">
-              <option value="">— Seleccionar —</option>
-            </select>
+            <input type="text" id="f-responsable" list="f-responsable-datalist" placeholder="Escribe nombre o apellido..." autocomplete="off" oninput="limpiarError('f-responsable','hint-responsable')">
+            <datalist id="f-responsable-datalist"></datalist>
             <span class="field-hint" id="hint-responsable">Campo obligatorio</span>
           </div>
           <div class="form-group">
@@ -1737,9 +1736,9 @@ async function cargarResponsablesUI(){
   try {
     var data=await apiMaestro('getResponsables');
     var resp=data.responsables||[];
-    var select=document.getElementById('f-responsable');
-    select.innerHTML='<option value="">— Seleccionar —</option>';
-    resp.forEach(function(r){ var opt=document.createElement('option'); opt.value=r; opt.textContent=r; select.appendChild(opt); });
+    var datalist=document.getElementById('f-responsable-datalist');
+    datalist.innerHTML='';
+    resp.forEach(function(r){ var opt=document.createElement('option'); opt.value=r; datalist.appendChild(opt); });
     renderResponsablesAdmin(resp);
   } catch(e){ console.warn('No se pudieron cargar responsables:', e); }
 }
