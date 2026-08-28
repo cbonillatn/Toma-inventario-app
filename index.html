@@ -543,6 +543,11 @@ tr:last-child td{border-bottom:none}tr:hover td{background:rgba(255,255,255,.02)
     <!-- CONFIG -->
     <div class="panel" id="tab-config">
       <div class="card">
+        <div class="card-title">Herramientas adicionales</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:14px;font-family:var(--mono)">Herramientas externas de análisis, disponibles solo para administradores.</p>
+        <button class="btn btn-primary" onclick="window.open('https://cbonillatn.github.io/Clasificacion_abc/', '_blank')" style="width:auto">📊 Clasificación ABC</button>
+      </div>
+      <div class="card">
         <div class="card-title">Rendimiento — caché de datos</div>
         <p style="font-size:12px;color:var(--text2);margin-bottom:14px;font-family:var(--mono)">El sistema guarda en memoria el catálogo de productos y series por unas horas para responder más rápido. Si acabas de actualizar INV VALORIZADO o SERIES manualmente en el sheet, límpiala aquí para ver los cambios de inmediato.</p>
         <button class="btn btn-secondary" onclick="limpiarCacheSistema()" style="width:auto" id="btn-limpiar-cache">🧹 Limpiar caché ahora</button>
